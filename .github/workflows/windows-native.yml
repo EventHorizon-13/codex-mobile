@@ -36,13 +36,14 @@ jobs:
           New-Item -ItemType Directory -Force -Path out | Out-Null
           Copy-Item desktop/codex-mobile-rust/target/release/codex-mobile-native.exe out/CodexMobile.exe
           Copy-Item desktop/codex-mobile-rust/README.md out/README.md
-          Compress-Archive -Path out/* -DestinationPath CodexMobile-Windows-x64.zip
-          Get-Item out/CodexMobile.exe, CodexMobile-Windows-x64.zip | Select-Object Name, Length
+          Get-Item out/CodexMobile.exe, out/README.md | Select-Object Name, Length
       - name: Upload app
         uses: actions/upload-artifact@v4
         with:
           name: CodexMobile-Windows-x64
-          path: CodexMobile-Windows-x64.zip
+          path: |
+            out/CodexMobile.exe
+            out/README.md
           retention-days: 30
 
   visual-preview:
