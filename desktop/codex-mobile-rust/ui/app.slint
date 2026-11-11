@@ -131,6 +131,7 @@ export component AppWindow inherits Window {
     in-out property <string> sandbox: "workspace-write";
     in-out property <int> panel: 0;
     in-out property <int> selected-thread: -1;
+    in-out property <bool> show-archived: false;
     in property <[ThreadRow]> threads;
     in property <[MessageRow]> messages;
     in property <[FileRow]> files;
@@ -143,6 +144,7 @@ export component AppWindow inherits Window {
     callback new-thread();
     callback open-thread(int);
     callback refresh();
+    callback toggle-archived();
     callback send-message(string);
     callback stop-turn();
     callback attach-image();
@@ -228,12 +230,13 @@ export component AppWindow inherits Window {
                         row-refresh := TouchArea { mouse-cursor: pointer; clicked => { root.refresh(); } }
                     }
                     Rectangle {
-                        height: 38px;
+                        height: 38px; background: row-archived.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
                         HorizontalLayout { padding-left: 14px; padding-right: 12px; spacing: 10px;
-                            IconArchive { tint: root.dark ? #777777 : #888888; cross-axis-self-alignment: center; }
-                            Text { text: "已归档"; color: root.dark ? #777777 : #888888; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
-                            IconChevron { tint: root.dark ? #666666 : #999999; cross-axis-self-alignment: center; }
+                            IconArchive { tint: root.show-archived ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #777777 : #888888); cross-axis-self-alignment: center; }
+                            Text { text: root.show-archived ? "返回会话" : "已归档"; color: root.show-archived ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #777777 : #888888); font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
+                            IconChevron { tint: root.show-archived ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #666666 : #999999); cross-axis-self-alignment: center; }
                         }
+                        row-archived := TouchArea { mouse-cursor: pointer; clicked => { root.toggle-archived(); } }
                     }
                     Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
                     Rectangle {

@@ -64,6 +64,7 @@ struct State {
     tool_index: Option<usize>,
     busy: bool,
     approved: bool,
+    show_archived: bool,
 }
 
 fn text(value: &Value, key: &str) -> String { value.get(key).and_then(Value::as_str).unwrap_or_default().to_string() }
@@ -110,7 +111,7 @@ fn set_info(ui: &AppWindow, rows: Vec<InfoRow>) { ui.set_info(ModelRc::new(VecMo
 fn set_status(ui: &AppWindow, value: impl Into<SharedString>) { ui.set_status(value.into()); }
 fn request_initial_state(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedSender<Command>) {
     let s = state.lock().unwrap();
-    rpc(tx, "thread:list", "thread:list", json!({"limit":100}));
+    rpc(tx, "thread:list", "thread:list", json!({"limit":100,"archived":s.show_archived}));
     rpc(tx, "models:read", "models:read", json!({"cwd":s.cwd}));
     rpc(tx, "needs-you:snapshot", "needs-you:snapshot", json!({}));
 }
@@ -151,6 +152,10 @@ fn handle_reply(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
     let mut s = state.lock().unwrap();
     match tag {
         "thread:list" => {
+            if let Some(archived) = value["archived"].as_bool() {
+                s.show_archived = archived;
+                ui.set_show_archived(archived);
+            }
             s.threads = value["threads"].as_array().into_iter().flatten().filter_map(|thread| {
                 let id = text(thread, "id");
                 if id.is_empty() { return None; }
@@ -267,7 +272,7 @@ fn handle_reply(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
         "user:approval" => rpc(tx, "needs-you:snapshot", "needs-you:snapshot", json!({})),
         "thread:archive" | "thread:delete" | "thread:rename" | "thread:compact" | "thread:review" | "thread:rollback" => {
             set_status(ui, "操作已提交");
-            rpc(tx, "thread:list", "thread:list", json!({"limit":100}));
+            rpc(tx, "thread:list", "thread:list", json!({"limit":100,"archived":s.show_archived}));
             if tag == "thread:delete" { s.thread_id.clear(); reset_messages(ui, &mut s); ui.set_title_text("新会话".into()); }
         }
         _ => {}
@@ -400,7 +405,7 @@ fn handle_agent(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
         }
         "plan" => { s.stream_index = None; s.reasoning_index = None; s.tool_index = None; add_message(ui, &mut s, "活动", "计划已更新", 1); }
         "approval_request" | "user_input_request" => { rpc(tx, "needs-you:snapshot", "needs-you:snapshot", json!({})); ui.set_panel(3); }
-        "result" => { s.stream_index = None; s.reasoning_index = None; s.tool_index = None; s.busy = false; ui.set_busy(false); rpc(tx, "thread:list", "thread:list", json!({"limit":100})); }
+        "result" => { s.stream_index = None; s.reasoning_index = None; s.tool_index = None; s.busy = false; ui.set_busy(false); rpc(tx, "thread:list", "thread:list", json!({"limit":100,"archived":s.show_archived})); }
         "error" => { s.stream_index = None; s.reasoning_index = None; s.tool_index = None; s.busy = false; ui.set_busy(false); add_message(ui, &mut s, "错误", &text(payload, "message"), 2); }
         "status" => { let value = text(payload, "state"); if value == "running" { ui.set_busy(true); } }
         _ => {}
@@ -466,11 +471,25 @@ fn main() -> Result<(), slint::PlatformError> {
     }
     {
         let state = state.clone(); let tx = tx.clone();
-        ui.on_refresh(move || { let s = state.lock().unwrap(); rpc(&tx, "thread:list", "thread:list", json!({"cwd":s.cwd,"limit":100})); });
+        ui.on_refresh(move || { let s = state.lock().unwrap(); rpc(&tx, "thread:list", "thread:list", json!({"cwd":s.cwd,"limit":100,"archived":s.show_archived})); });
     }
     {
-        let state = state.clone(); let tx = tx.clone();
-        ui.on_new_thread(move || { let s = state.lock().unwrap(); rpc(&tx, "session:new", "session:new", json!({"cwd":s.cwd})); });
+        let state = state.clone(); let tx = tx.clone(); let weak = ui.as_weak();
+        ui.on_toggle_archived(move || {
+            let Some(ui) = weak.upgrade() else { return; };
+            let mut s = state.lock().unwrap();
+            s.show_archived = !s.show_archived;
+            ui.set_show_archived(s.show_archived);
+            rpc(&tx, "thread:list", "thread:list", json!({"cwd":s.cwd,"limit":100,"archived":s.show_archived}));
+        });
+    }
+    {
+        let state = state.clone(); let tx = tx.clone(); let weak = ui.as_weak();
+        ui.on_new_thread(move || {
+            let mut s = state.lock().unwrap();
+            if s.show_archived { s.show_archived = false; if let Some(ui) = weak.upgrade() { ui.set_show_archived(false); } }
+            rpc(&tx, "session:new", "session:new", json!({"cwd":s.cwd}));
+        });
     }
     {
         let state = state.clone(); let tx = tx.clone(); let weak = ui.as_weak();
