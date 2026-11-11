@@ -6,7 +6,7 @@ on:
       - feature/windows-native-client
       - dev
     paths:
-      - 'desktop/CodexMobile.Windows/**'
+      - 'desktop/codex-mobile-rust/**'
       - '.github/workflows/windows-native.yml'
   workflow_dispatch:
 
@@ -17,22 +17,20 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          dotnet-version: '8.0.x'
-      - name: Publish Windows x64 app
+          targets: x86_64-pc-windows-msvc
+      - name: Build Windows x64 app
         shell: pwsh
-        run: >-
-          dotnet publish desktop/CodexMobile.Windows/CodexMobile.Windows.csproj
-          --configuration Release
-          --runtime win-x64
-          --self-contained true
-          -p:PublishSingleFile=true
-          -p:IncludeNativeLibrariesForSelfExtract=true
-          --output out/win-x64
+        run: cargo build --release --manifest-path desktop/codex-mobile-rust/Cargo.toml
       - name: Package app
         shell: pwsh
-        run: Compress-Archive -Path out/win-x64/* -DestinationPath CodexMobile-Windows-x64.zip
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Copy-Item desktop/codex-mobile-rust/target/release/codex-mobile-native.exe out/CodexMobile.exe
+          Copy-Item desktop/codex-mobile-rust/README.md out/README.md
+          Compress-Archive -Path out/* -DestinationPath CodexMobile-Windows-x64.zip
+          Get-Item out/CodexMobile.exe, CodexMobile-Windows-x64.zip | Select-Object Name, Length
       - name: Upload app
         uses: actions/upload-artifact@v4
         with:
