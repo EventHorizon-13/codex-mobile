@@ -342,6 +342,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let mut s = state.lock().unwrap();
             s.config.server_url = url.to_string(); s.config.remember = remember;
             save_config(&s.config);
+            if !remember { if let Some(o) = origin(&url) { windows::forget_secret(&o); } }
             let saved = if token.is_empty() && remember { origin(&url).and_then(|o| windows::load_secret(&o)) } else { None };
             let _ = tx.send(Command::Connect { url: url.to_string(), token: token.to_string(), secret: saved, device: s.config.device_id.clone() });
         });
@@ -374,7 +375,7 @@ fn main() -> Result<(), slint::PlatformError> {
             let s = state.lock().unwrap();
             if let Some(thread) = s.threads.get(index as usize) {
                 ui.set_selected_thread(index); ui.set_title_text(thread.title.clone());
-                rpc(&tx, "thread:select", "thread:select", json!({"threadId":thread.id,"cwd":thread.cwd,"title":thread.title}));
+                rpc(&tx, "thread:select", "thread:select", json!({"threadId":thread.id.as_str(),"cwd":thread.cwd.as_str(),"title":thread.title.as_str()}));
             }
         });
     }
@@ -464,7 +465,7 @@ fn register_workspace_callbacks(ui: &AppWindow, state: Arc<Mutex<State>>, tx: mp
             let s = state.lock().unwrap();
             if let Some(file) = s.files.get(index as usize) {
                 let name = if file.directory { "fs:readDirectory" } else { "fs:readFile" };
-                rpc(&tx, name, name, json!({"cwd":s.cwd,"path":file.path}));
+                rpc(&tx, name, name, json!({"cwd":s.cwd,"path":file.path.as_str()}));
             }
         });
     }
@@ -479,7 +480,7 @@ fn register_workspace_callbacks(ui: &AppWindow, state: Arc<Mutex<State>>, tx: mp
     }
     {
         let state = state.clone(); let tx = tx.clone();
-        ui.on_file_search(move |query| { let s = state.lock().unwrap(); rpc(&tx, "files:search", "files:search", json!({"cwd":s.cwd,"query":query})); });
+        ui.on_file_search(move |query| { let s = state.lock().unwrap(); rpc(&tx, "files:search", "files:search", json!({"cwd":s.cwd,"query":query.as_str()})); });
     }
     {
         let state = state.clone(); let tx = tx.clone();
@@ -514,7 +515,7 @@ fn register_ops_callbacks(ui: &AppWindow, state: Arc<Mutex<State>>, tx: mpsc::Un
             let Some(need) = s.needs.get(index as usize) else { return; };
             let decision = if decision == "decline" && !need.decisions.contains("decline") { "cancel" } else { decision.as_str() };
             if !need.decisions.contains(decision) { ui.set_status("该请求不支持这项决定".into()); return; }
-            rpc(&tx, "user:approval", "user:approval", json!({"needId":need.id,"approvalId":need.approval_id,"decision":decision,"threadId":need.thread_id,"instanceId":need.instance_id,"turnId":need.turn_id,"itemId":need.item_id}));
+            rpc(&tx, "user:approval", "user:approval", json!({"needId":need.id.as_str(),"approvalId":need.approval_id.as_str(),"decision":decision,"threadId":need.thread_id.as_str(),"instanceId":need.instance_id.as_str(),"turnId":need.turn_id.as_str(),"itemId":need.item_id.as_str()}));
         });
     }
     {
@@ -533,7 +534,7 @@ fn register_ops_callbacks(ui: &AppWindow, state: Arc<Mutex<State>>, tx: mpsc::Un
                 let id = text(question, "id");
                 if !id.is_empty() { answers.insert(id, json!(values.get(i).filter(|v| !v.is_empty()).map(|v| vec![*v]).unwrap_or_default())); }
             }
-            rpc(&tx, "user:approval", "user:approval", json!({"needId":need.id,"approvalId":need.approval_id,"answers":answers,"threadId":need.thread_id,"instanceId":need.instance_id,"turnId":need.turn_id,"itemId":need.item_id}));
+            rpc(&tx, "user:approval", "user:approval", json!({"needId":need.id.as_str(),"approvalId":need.approval_id.as_str(),"answers":answers,"threadId":need.thread_id.as_str(),"instanceId":need.instance_id.as_str(),"turnId":need.turn_id.as_str(),"itemId":need.item_id.as_str()}));
         });
     }
     {
