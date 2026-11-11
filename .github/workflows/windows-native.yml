@@ -78,6 +78,7 @@ jobs:
               done
               if [ -z "$window_id" ] || ! kill -0 "$app_pid" 2>/dev/null; then cat "preview/$theme.log"; exit 1; fi
               sleep 3
+              xdotool mousemove --sync 0 0
               import -window "$window_id" "preview/$theme.png"
               kill "$app_pid"
               wait "$app_pid" || true

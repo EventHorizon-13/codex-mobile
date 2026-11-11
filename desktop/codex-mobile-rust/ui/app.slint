@@ -148,7 +148,7 @@ export component AppWindow inherits Window {
     min-width: 880px;
     min-height: 570px;
     default-font-family: "Segoe UI";
-    background: root.dark ? #121212 : #f8f9fa;
+    background: root.dark ? @linear-gradient(180deg, #161616 0%, #101010 100%) : @linear-gradient(180deg, #ffffff 0%, #f4f5f6 100%);
 
     in-out property <bool> dark: true;
     init => { Palette.color-scheme = root.dark ? ColorScheme.dark : ColorScheme.light; }
@@ -285,7 +285,7 @@ export component AppWindow inherits Window {
             }
             Rectangle { width: 1px; background: root.dark ? #262626 : #f0f0f2; }
             Rectangle {
-                background: root.dark ? #121212 : #f8f9fa;
+                background: root.dark ? @linear-gradient(180deg, #161616 0%, #101010 100%) : @linear-gradient(180deg, #ffffff 0%, #f4f5f6 100%);
                 VerticalLayout {
                     spacing: 0px;
                     Rectangle {
@@ -366,9 +366,9 @@ export component AppWindow inherits Window {
                             vertical-stretch: 1;
                             background: transparent;
                             ListView {
-                                width: min(parent.width - 32px, 690px); height: parent.height - 20px;
+                                width: min(parent.width - 32px, 690px); height: parent.height - 10px;
                                 x: (parent.width - self.width) / 2;
-                                y: 20px;
+                                y: 10px;
                                 horizontal-scrollbar-policy: always-off;
                                 for msg in root.messages: Rectangle {
                                     width: parent.width;
@@ -397,7 +397,7 @@ export component AppWindow inherits Window {
                             }
                         }
                         Rectangle {
-                            height: 110px;
+                            height: 114px;
                             background: transparent;
                             Rectangle {
                                 width: min(parent.width - 32px, 690px); height: 90px;
