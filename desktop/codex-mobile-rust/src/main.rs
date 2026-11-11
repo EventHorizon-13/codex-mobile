@@ -61,6 +61,7 @@ struct State {
     attachment: Option<Value>,
     stream_index: Option<usize>,
     busy: bool,
+    approved: bool,
 }
 
 fn text(value: &Value, key: &str) -> String { value.get(key).and_then(Value::as_str).unwrap_or_default().to_string() }
@@ -81,6 +82,12 @@ fn reset_messages(ui: &AppWindow, state: &mut State) {
 }
 fn set_info(ui: &AppWindow, rows: Vec<InfoRow>) { ui.set_info(ModelRc::new(VecModel::from(rows))); }
 fn set_status(ui: &AppWindow, value: impl Into<SharedString>) { ui.set_status(value.into()); }
+fn request_initial_state(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedSender<Command>) {
+    let s = state.lock().unwrap();
+    rpc(tx, "thread:list", "thread:list", json!({"limit":100}));
+    rpc(tx, "models:read", "models:read", json!({"cwd":s.cwd}));
+    rpc(tx, "needs-you:snapshot", "needs-you:snapshot", json!({}));
+}
 
 fn handle_event(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedSender<Command>, event: Event) {
     match event {
@@ -89,21 +96,21 @@ fn handle_event(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
             ui.set_connected(false);
             ui.set_busy(false);
             set_status(ui, message);
-            state.lock().unwrap().busy = false;
+            let mut s = state.lock().unwrap();
+            s.busy = false;
+            s.approved = false;
         }
         Event::Connected { origin, issued_secret } => {
             let mut s = state.lock().unwrap();
             s.origin = origin.clone();
+            s.approved = false;
             if s.config.remember {
                 if let Some(secret) = issued_secret {
                     if let Err(error) = windows::save_secret(&origin, &secret) { set_status(ui, error); }
                 }
             }
             ui.set_connected(true);
-            set_status(ui, "已连接");
-            rpc(tx, "thread:list", "thread:list", json!({"limit":100}));
-            rpc(tx, "models:read", "models:read", json!({"cwd":s.cwd}));
-            rpc(tx, "needs-you:snapshot", "needs-you:snapshot", json!({}));
+            set_status(ui, "已连接，正在同步…");
         }
         Event::Reply { tag, value } => handle_reply(ui, state, tx, &tag, &value),
         Event::Agent(value) => handle_agent(ui, state, tx, &value),
@@ -123,7 +130,7 @@ fn handle_reply(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
                 if id.is_empty() { return None; }
                 let title = text(thread, "title");
                 let preview = text(thread, "preview");
-                Some(ThreadRow { id: id.into(), title: if title.is_empty() { if preview.is_empty() { "未命名会话".into() } else { preview.into() } } else { title.into() }, cwd: text(thread, "cwd").into() })
+                Some(ThreadRow { id: id.into(), title: if title.is_empty() { if preview.is_empty() { "未命名会话".into() } else { preview.into() } } else { title.into() }, cwd: text(thread, "cwd").into(), status: text(thread, "status").into() })
             }).collect();
             ui.set_threads(ModelRc::new(VecModel::from(s.threads.clone())));
             if !s.thread_id.is_empty() {
@@ -268,9 +275,19 @@ fn info_rows(tag: &str, value: &Value) -> Vec<InfoRow> {
 fn handle_agent(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedSender<Command>, event: &Value) {
     let kind = text(event, "type");
     let payload = &event["payload"];
+    if kind == "init" {
+        state.lock().unwrap().approved = true;
+        ui.set_connected(true);
+        set_status(ui, "已连接");
+        request_initial_state(ui, state, tx);
+        return;
+    }
     if kind == "device_status" {
         let status = text(payload, "status");
-        set_status(ui, match status.as_str() { "pending" => "等待服务器批准此设备", "denied" => "设备被拒绝", "approved" => "已连接", _ => "设备状态未知" });
+        let mut s = state.lock().unwrap();
+        s.approved = status == "approved";
+        ui.set_connected(status != "denied");
+        set_status(ui, match status.as_str() { "pending" => "等待服务器批准此设备", "denied" => "设备被拒绝", "approved" => "设备已批准，正在同步…", _ => "设备状态未知" });
         return;
     }
     if kind == "needs_you_changed" { rpc(tx, "needs-you:snapshot", "needs-you:snapshot", json!({})); return; }
@@ -384,6 +401,7 @@ fn main() -> Result<(), slint::PlatformError> {
         ui.on_send_message(move |text| {
             let Some(ui) = weak.upgrade() else { return; };
             let s = state.lock().unwrap();
+            if !s.approved { ui.set_status("等待服务器批准此设备".into()); return; }
             if text.trim().is_empty() && s.attachment.is_none() { return; }
             let mut payload = json!({"clientRequestId":uuid::Uuid::new_v4().simple().to_string(),"text":text.trim()});
             if !s.thread_id.is_empty() { payload["threadId"] = json!(s.thread_id); }

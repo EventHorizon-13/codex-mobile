@@ -1,6 +1,6 @@
 import { Palette, LineEdit, TextEdit, ListView, ComboBox, CheckBox } from "std-widgets.slint";
 
-export struct ThreadRow { id: string, title: string, cwd: string }
+export struct ThreadRow { id: string, title: string, cwd: string, status: string }
 export struct MessageRow { role: string, body: string, tone: int }
 export struct FileRow { name: string, path: string, directory: bool }
 export struct NeedRow { id: string, title: string, detail: string, thread-id: string, instance-id: string, approval-id: string, turn-id: string, item-id: string, decisions: string, question: bool }
@@ -13,7 +13,7 @@ component ActionButton inherits Rectangle {
     in property <bool> danger: false;
     callback clicked();
     height: 36px;
-    border-radius: 9px;
+    border-radius: 12px;
     border-width: prominent ? 0px : 1px;
     border-color: dark ? #414141 : #dedede;
     background: prominent ? (dark ? #f4f4f4 : #171717) : area.has-hover ? (dark ? #343434 : #ececec) : (dark ? #2b2b2b : #ffffff);
@@ -34,7 +34,7 @@ component NavButton inherits Rectangle {
     in property <bool> dark;
     callback clicked();
     height: 40px;
-    border-radius: 9px;
+    border-radius: 12px;
     background: selected ? (dark ? #303030 : #eaeaea) : area.has-hover ? (dark ? #292929 : #efefef) : transparent;
     Text {
         text: label; x: 12px; width: parent.width - 24px;
@@ -54,7 +54,7 @@ export component AppWindow inherits Window {
     min-width: 880px;
     min-height: 570px;
     default-font-family: "Segoe UI";
-    background: root.dark ? #080808 : #ffffff;
+    background: root.dark ? #0d0d0d : #ffffff;
 
     in-out property <bool> dark: true;
     init => { Palette.color-scheme = root.dark ? ColorScheme.dark : ColorScheme.light; }
@@ -114,7 +114,7 @@ export component AppWindow inherits Window {
         spacing: 0px;
         Rectangle {
             height: 46px;
-            background: root.dark ? #141414 : #f8f9fa;
+            background: root.dark ? #171717 : #f8f9fa;
             WindowMoveArea {
                 width: parent.width - 138px;
                 HorizontalLayout {
@@ -147,7 +147,7 @@ export component AppWindow inherits Window {
             spacing: 0px;
             Rectangle {
                 width: 258px;
-                background: root.dark ? #141414 : #f8f9fa;
+                background: root.dark ? #171717 : #f8f9fa;
                 VerticalLayout {
                     padding-left: 11px; padding-right: 11px; padding-top: 14px; padding-bottom: 10px;
                     spacing: 8px;
@@ -160,9 +160,14 @@ export component AppWindow inherits Window {
                         horizontal-scrollbar-policy: always-off;
                         for item[i] in root.threads: Rectangle {
                             height: 43px;
-                            border-radius: 9px;
+                            border-radius: 12px;
                             background: root.selected-thread == i ? (root.dark ? #292929 : #e9eaeb) : thread-area.has-hover ? (root.dark ? #242424 : #eeeeef) : transparent;
-                            Text { x: 12px; width: parent.width - 24px; text: item.title; overflow: elide; color: root.dark ? #e4e4e4 : #242424; font-size: 13px; font-weight: root.selected-thread == i ? 600 : 450; vertical-alignment: center; }
+                            Rectangle {
+                                x: 10px; y: (parent.height - 7px) / 2; width: 7px; height: 7px; border-radius: 4px;
+                                visible: item.status != "";
+                                background: item.status == "error" ? #df1c1c : item.status == "needs-you" || item.status == "needs_you" ? #e09a10 : item.status == "running" ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #666666 : #aaaaaa);
+                            }
+                            Text { x: 24px; width: parent.width - 36px; text: item.title; overflow: elide; color: root.dark ? #e4e4e4 : #242424; font-size: 13px; font-weight: root.selected-thread == i ? 600 : 450; vertical-alignment: center; }
                             thread-area := TouchArea { mouse-cursor: pointer; clicked => { root.open-thread(i); } }
                         }
                     }
@@ -178,12 +183,12 @@ export component AppWindow inherits Window {
             }
             Rectangle { width: 1px; background: root.dark ? #252525 : #e9e9e9; }
             Rectangle {
-                background: root.dark ? #080808 : #ffffff;
+                background: root.dark ? #0d0d0d : #ffffff;
                 VerticalLayout {
                     spacing: 0px;
                     Rectangle {
                         height: 62px;
-                        background: root.dark ? #080808 : #ffffff;
+                        background: root.dark ? #0d0d0d : #ffffff;
                         HorizontalLayout {
                             padding-left: 28px; padding-right: 26px; spacing: 9px;
                             Text { text: root.panel == 0 ? (root.title-text == "新会话" ? "Codex Mobile" : root.title-text) : root.panel == 1 ? "工作区" : root.panel == 2 ? "Git 变更" : root.panel == 3 ? "需要你" : root.panel == 4 ? "设置与状态" : "会话操作"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 16px; font-weight: 600; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
@@ -219,7 +224,23 @@ export component AppWindow inherits Window {
                         if root.messages.length == 0: Rectangle {
                             vertical-stretch: 1;
                             background: transparent;
-                            Text { text: "这轮改什么？"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 32px; font-weight: 450; horizontal-alignment: center; vertical-alignment: center; }
+                            Rectangle {
+                                width: min(parent.width - 80px, 520px);
+                                height: 164px;
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2 - 12px;
+                                background: transparent;
+                                VerticalLayout {
+                                    spacing: 18px;
+                                    Text { text: "这轮改什么？"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 30px; font-weight: 500; horizontal-alignment: center; }
+                                    HorizontalLayout {
+                                        spacing: 8px;
+                                        ActionButton { label: "工作区"; dark: root.dark; horizontal-stretch: 1; clicked => { root.panel = 1; root.load-files(); } }
+                                        ActionButton { label: "Git 变更"; dark: root.dark; horizontal-stretch: 1; clicked => { root.panel = 2; root.load-git(); } }
+                                        ActionButton { label: "待审批"; dark: root.dark; horizontal-stretch: 1; clicked => { root.open-info("needs"); root.panel = 3; } }
+                                    }
+                                }
+                            }
                         }
                         if root.messages.length > 0: ListView {
                             vertical-stretch: 1;
@@ -252,16 +273,16 @@ export component AppWindow inherits Window {
                         }
                         Rectangle {
                             height: 158px;
-                            background: root.dark ? #080808 : #ffffff;
+                            background: root.dark ? #0d0d0d : #ffffff;
                             composer := Rectangle {
                                 width: min(parent.width - 72px, 840px);
                                 height: 116px;
                                 x: (parent.width - self.width) / 2;
                                 y: 12px;
-                                border-radius: 22px;
+                                border-radius: 20px;
                                 border-width: 1px;
-                                border-color: root.dark ? #454545 : #d5d5d8;
-                                background: root.dark ? #191d24 : #f8f9fa;
+                                border-color: root.dark ? #2b2b2b : #e3e3e3;
+                                background: root.dark ? #191919 : #f8f9fa;
                                 clip: true;
                                 Text { x: 20px; y: 17px; text: "发消息或跟进"; color: root.dark ? #9a9a9a : #777777; font-size: 15px; visible: root.draft == ""; }
                                 TextInput { x: 20px; y: 15px; width: parent.width - 40px; height: 57px; text <=> root.draft; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 15px; single-line: false; wrap: word-wrap; }

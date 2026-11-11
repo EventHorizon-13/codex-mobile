@@ -27,33 +27,9 @@ jobs:
       - name: Build Windows x64 app
         shell: pwsh
         run: cargo build --release --bins --manifest-path desktop/codex-mobile-rust/Cargo.toml
-      - name: Capture native UI previews
+      - name: Test Windows theme registry
         shell: pwsh
-        continue-on-error: true
-        run: |
-          Add-Type -AssemblyName System.Windows.Forms
-          Add-Type -AssemblyName System.Drawing
-          New-Item -ItemType Directory -Force -Path preview | Out-Null
-          foreach ($theme in @('dark', 'light')) {
-            $app = Start-Process -FilePath desktop/codex-mobile-rust/target/release/ui-preview.exe -ArgumentList "--$theme" -PassThru
-            Start-Sleep -Seconds 4
-            if ($app.HasExited) { throw "UI preview exited early in $theme mode" }
-            $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-            $bitmap = [System.Drawing.Bitmap]::new($bounds.Width, $bounds.Height)
-            $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-            $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
-            $bitmap.Save("$PWD/preview/$theme.png", [System.Drawing.Imaging.ImageFormat]::Png)
-            $graphics.Dispose()
-            $bitmap.Dispose()
-            Stop-Process -Id $app.Id
-          }
-      - name: Upload UI previews
-        uses: actions/upload-artifact@v4
-        with:
-          name: CodexMobile-Windows-preview
-          path: preview/*.png
-          if-no-files-found: ignore
-          retention-days: 7
+        run: cargo test --release --bin codex-mobile-native --manifest-path desktop/codex-mobile-rust/Cargo.toml
       - name: Package app
         shell: pwsh
         run: |
@@ -77,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Install native display build libraries
-        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libfontconfig1-dev libfreetype6-dev libssl-dev libxkbcommon-dev libxkbcommon-x11-0 libwayland-dev libx11-dev libxrandr-dev libxcursor-dev libxi-dev libgl1-mesa-dev libegl1-mesa-dev libgl1-mesa-dri xvfb scrot fonts-noto-cjk
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libfontconfig1-dev libfreetype6-dev libssl-dev libxkbcommon-dev libxkbcommon-x11-0 libwayland-dev libx11-dev libxrandr-dev libxcursor-dev libxi-dev libgl1-mesa-dev libegl1-mesa-dev libgl1-mesa-dri xvfb xdotool imagemagick fonts-noto-cjk
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: desktop/codex-mobile-rust
@@ -90,12 +66,18 @@ jobs:
           xvfb-run -a -s '-screen 0 1280x800x24' bash -c '
             set -eu
             export LIBGL_ALWAYS_SOFTWARE=1
-            for theme in dark light; do
+            for theme in dark light empty-dark empty-light; do
               desktop/codex-mobile-rust/target/release/ui-preview --$theme >"preview/$theme.log" 2>&1 &
               app_pid=$!
-              sleep 9
-              if ! kill -0 "$app_pid" 2>/dev/null; then cat "preview/$theme.log"; exit 1; fi
-              scrot "preview/$theme.png"
+              window_id=""
+              for _ in $(seq 1 24); do
+                window_id=$(xdotool search --onlyvisible --pid "$app_pid" --name 'Codex Mobile' 2>/dev/null | head -n 1 || true)
+                if [ -n "$window_id" ]; then break; fi
+                sleep 0.5
+              done
+              if [ -z "$window_id" ] || ! kill -0 "$app_pid" 2>/dev/null; then cat "preview/$theme.log"; exit 1; fi
+              sleep 3
+              import -window "$window_id" "preview/$theme.png"
               kill "$app_pid"
               wait "$app_pid" || true
             done

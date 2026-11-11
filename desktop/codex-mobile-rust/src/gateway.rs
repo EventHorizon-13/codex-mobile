@@ -45,7 +45,7 @@ async fn run_connection(
     device: String,
 ) -> Result<(), String> {
     let base = reqwest::Url::parse(url.trim()).map_err(|_| "服务器地址无效".to_string())?;
-    let local = base.host_str().is_some_and(|host| host == "localhost" || host == "127.0.0.1" || host == "[::1]");
+    let local = base.host_str().is_some_and(|host| host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "[::1]");
     if base.scheme() != "https" && !(local && base.scheme() == "http") { return Err("远程连接必须使用 HTTPS".into()); }
     if !base.username().is_empty() || base.password().is_some() || base.query().is_some() || base.fragment().is_some() { return Err("服务器地址不能包含凭证或查询参数".into()); }
     let origin = base.origin().ascii_serialization();
@@ -71,6 +71,7 @@ async fn run_connection(
     post(Event::Status("正在建立实时连接…".into()));
     let (mut socket, _) = tokio_tungstenite::connect_async(request).await.map_err(|error| format!("实时连接失败：{error}"))?;
     let mut connected = false;
+    let mut approved = false;
     let mut next_id = 0u32;
     let mut pending: HashMap<u32, String> = HashMap::new();
     let mut pending_delta: Option<Value> = None;
@@ -104,6 +105,13 @@ async fn run_connection(
                         if let Ok(parts) = serde_json::from_str::<Value>(&packet[start..]) {
                             if parts[0] == "agent:event" {
                                 let event = parts[1].clone();
+                                match event["type"].as_str() {
+                                    Some("init") => approved = true,
+                                    Some("device_status") => {
+                                        approved = event["payload"]["status"] == "approved";
+                                    }
+                                    _ => {}
+                                }
                                 if event["type"] == "text_delta" {
                                     if let Some(ref mut merged) = pending_delta {
                                         if merged["sessionId"] == event["sessionId"] && merged["instanceId"] == event["instanceId"] {
@@ -140,6 +148,7 @@ async fn run_connection(
                     Command::Connect { .. } => { post(Event::Status("已连接；请先断开当前连接。".into())); }
                     Command::Rpc { tag, name, payload } => {
                         if !connected { post(Event::Status("设备仍在等待网关批准。".into())); continue; }
+                        if !approved { post(Event::Status("等待服务器批准此设备。".into())); continue; }
                         next_id = next_id.wrapping_add(1);
                         pending.insert(next_id, tag);
                         socket.send(Message::Text(format!("42{next_id}{}", json!([name,payload])).into())).await.map_err(|error| format!("发送失败：{error}"))?;

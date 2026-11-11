@@ -61,7 +61,9 @@ pub fn forget_secret(origin: &str) {
     unsafe { CredDeleteW(name.as_ptr(), 1, 0); }
 }
 
-const HKCU: isize = 0x8000_0001u32 as isize;
+// HKEY_CURRENT_USER is a pre-defined signed LONG handle. On 64-bit Windows the
+// value must keep its sign extension, otherwise RegOpenKeyExW rejects it.
+const HKCU: isize = 0xFFFF_FFFF_8000_0001u64 as isize;
 const KEY_READ: u32 = 0x20019;
 const REG_NOTIFY_CHANGE_LAST_SET: u32 = 0x0000_0004;
 
@@ -96,4 +98,16 @@ pub fn watch_theme(mut changed: impl FnMut(bool) + Send + 'static) {
         }
         unsafe { RegCloseKey(key); }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn current_user_theme_key_is_reachable() {
+        let key = theme_key().expect("Windows personalization key should be readable");
+        let _ = read_light(key);
+        unsafe { RegCloseKey(key); }
+    }
 }
