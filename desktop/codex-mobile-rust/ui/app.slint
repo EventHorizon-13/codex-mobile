@@ -12,16 +12,16 @@ component ActionButton inherits Rectangle {
     in property <bool> prominent: false;
     in property <bool> danger: false;
     callback clicked();
-    height: 34px;
-    border-radius: 5px;
-    border-width: 1px;
-    border-color: prominent ? (dark ? #3479e6 : #2867d0) : (dark ? #343940 : #d6dae1);
-    background: prominent ? (dark ? #3479e6 : #2867d0) : area.has-hover ? (dark ? #30343d : #e9edf4) : (dark ? #242830 : #ffffff);
+    height: 36px;
+    border-radius: 9px;
+    border-width: prominent ? 0px : 1px;
+    border-color: dark ? #414141 : #dedede;
+    background: prominent ? (dark ? #f4f4f4 : #171717) : area.has-hover ? (dark ? #343434 : #ececec) : (dark ? #2b2b2b : #ffffff);
     Text {
         text: label;
-        color: prominent ? #ffffff : danger ? #e35d61 : (dark ? #e5e7eb : #202632);
-        font-size: 12px;
-        font-weight: 600;
+        color: prominent ? (dark ? #171717 : #ffffff) : danger ? #d44f4f : (dark ? #ececec : #252525);
+        font-size: 13px;
+        font-weight: 500;
         horizontal-alignment: center;
         vertical-alignment: center;
     }
@@ -33,13 +33,13 @@ component NavButton inherits Rectangle {
     in property <bool> selected;
     in property <bool> dark;
     callback clicked();
-    height: 36px;
-    border-radius: 5px;
-    background: selected ? (dark ? #2b3446 : #e7efff) : area.has-hover ? (dark ? #282c34 : #edf0f5) : transparent;
+    height: 40px;
+    border-radius: 9px;
+    background: selected ? (dark ? #303030 : #eaeaea) : area.has-hover ? (dark ? #292929 : #efefef) : transparent;
     Text {
         text: label; x: 12px; width: parent.width - 24px;
-        color: selected ? (dark ? #b6d1ff : #245bc2) : (dark ? #aeb6c3 : #596273);
-        font-size: 13px; font-weight: selected ? 600 : 400;
+        color: selected ? (dark ? #f5f5f5 : #202020) : (dark ? #c5c5c5 : #555555);
+        font-size: 13px; font-weight: selected ? 600 : 450;
         vertical-alignment: center;
     }
     area := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
@@ -49,12 +49,12 @@ export component AppWindow inherits Window {
     title: "Codex Mobile";
     no-frame: true;
     resize-border-width: 7px;
-    preferred-width: 1220px;
-    preferred-height: 780px;
+    preferred-width: 1180px;
+    preferred-height: 760px;
     min-width: 880px;
     min-height: 570px;
     default-font-family: "Segoe UI";
-    background: root.dark ? #111318 : #f5f7fa;
+    background: root.dark ? #080808 : #ffffff;
 
     in-out property <bool> dark: true;
     init => { Palette.color-scheme = root.dark ? ColorScheme.dark : ColorScheme.light; }
@@ -114,137 +114,167 @@ export component AppWindow inherits Window {
         spacing: 0px;
         Rectangle {
             height: 46px;
-            background: root.dark ? #1a1d23 : #ffffff;
-            border-width: 0px;
-            HorizontalLayout {
-                spacing: 0px;
-                WindowMoveArea {
-                    horizontal-stretch: 1;
-                    HorizontalLayout {
-                        spacing: 10px;
-                        padding-left: 18px;
-                        Rectangle {
-                            width: 23px; height: 23px; border-radius: 6px;
-                            background: #3479e6;
-                            Text { text: "✦"; color: white; font-size: 16px; horizontal-alignment: center; vertical-alignment: center; }
-                        }
-                        Text { text: "Codex Mobile"; color: root.dark ? #f0f2f6 : #202632; font-size: 13px; font-weight: 650; vertical-alignment: center; }
-                        Text { text: "WINDOWS"; color: root.dark ? #697383 : #9aa3b1; font-size: 10px; vertical-alignment: center; }
-                    }
+            background: root.dark ? #141414 : #f8f9fa;
+            WindowMoveArea {
+                width: parent.width - 138px;
+                HorizontalLayout {
+                    padding-left: 17px;
+                    spacing: 10px;
+                    Text { text: "✦"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; vertical-alignment: center; }
+                    Text { text: "Codex"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 650; vertical-alignment: center; }
+                    Text { text: "Mobile"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; vertical-alignment: center; }
                 }
-                Rectangle { width: 44px; background: min-area.has-hover ? (root.dark ? #30343d : #ecf0f5) : transparent;
-                    Text { text: "−"; color: root.dark ? #c8ced7 : #434b58; horizontal-alignment: center; vertical-alignment: center; font-size: 17px; }
+            }
+            HorizontalLayout {
+                x: parent.width - 138px;
+                width: 138px;
+                spacing: 0px;
+                Rectangle { width: 46px; background: min-area.has-hover ? (root.dark ? #292929 : #ebebeb) : transparent;
+                    Text { text: "−"; color: root.dark ? #f2f2f2 : #333333; font-size: 17px; horizontal-alignment: center; vertical-alignment: center; }
                     min-area := TouchArea { mouse-cursor: pointer; clicked => { root.minimized = true; } }
                 }
-                Rectangle { width: 44px; background: max-area.has-hover ? (root.dark ? #30343d : #ecf0f5) : transparent;
-                    Text { text: root.maximized ? "❐" : "□"; color: root.dark ? #c8ced7 : #434b58; horizontal-alignment: center; vertical-alignment: center; font-size: 16px; }
+                Rectangle { width: 46px; background: max-area.has-hover ? (root.dark ? #292929 : #ebebeb) : transparent;
+                    Text { text: root.maximized ? "❐" : "□"; color: root.dark ? #f2f2f2 : #333333; font-size: 16px; horizontal-alignment: center; vertical-alignment: center; }
                     max-area := TouchArea { mouse-cursor: pointer; clicked => { root.maximized = !root.maximized; } }
                 }
-                Rectangle { width: 46px; background: close-area.has-hover ? #c74449 : transparent;
-                    Text { text: "×"; color: close-area.has-hover ? white : (root.dark ? #c8ced7 : #434b58); horizontal-alignment: center; vertical-alignment: center; font-size: 19px; }
+                Rectangle { width: 46px; background: close-area.has-hover ? #c84545 : transparent;
+                    Text { text: "×"; color: close-area.has-hover ? white : (root.dark ? #f2f2f2 : #333333); font-size: 19px; horizontal-alignment: center; vertical-alignment: center; }
                     close-area := TouchArea { mouse-cursor: pointer; clicked => { root.close(); } }
                 }
             }
         }
-        Rectangle { height: 1px; background: root.dark ? #343940 : #dce0e6; }
         HorizontalLayout {
             spacing: 0px;
             Rectangle {
-                width: 270px;
-                background: root.dark ? #1a1d23 : #f9fafc;
+                width: 258px;
+                background: root.dark ? #141414 : #f8f9fa;
                 VerticalLayout {
-                    padding: 14px;
-                    spacing: 10px;
-                    Rectangle { height: 3px; background: transparent; }
-                    Text { text: root.connected ? "已连接" : "连接服务器"; color: root.dark ? #e5e7eb : #202632; font-size: 18px; font-weight: 650; }
-                    Text { text: root.status; color: root.dark ? #9ca3af : #637083; font-size: 11px; wrap: word-wrap; }
-                    if !root.connected: VerticalLayout {
-                        spacing: 8px;
-                        LineEdit { text <=> root.server-url; placeholder-text: "https://服务器地址"; }
-                        token-input := LineEdit { input-type: password; placeholder-text: "访问口令"; }
-                        CheckBox { text: "保存此设备登录"; checked <=> root.remember-device; }
-                        ActionButton { label: "连接"; dark: root.dark; prominent: true; clicked => { root.connect(root.server-url, token-input.text, root.remember-device); token-input.text = ""; } }
-                    }
-                    if root.connected: HorizontalLayout {
-                        spacing: 8px;
-                        ActionButton { label: "断开"; dark: root.dark; clicked => { root.disconnect(); } }
-                        ActionButton { label: "忘记设备"; dark: root.dark; danger: true; clicked => { root.forget-device(); } }
-                    }
-                    Rectangle { height: 1px; background: root.dark ? #343940 : #dce0e6; }
-                    HorizontalLayout {
-                        Text { text: "会话"; color: root.dark ? #e5e7eb : #202632; font-size: 13px; font-weight: 650; vertical-alignment: center; horizontal-stretch: 1; }
-                        ActionButton { label: "+ 新建"; dark: root.dark; width: 74px; clicked => { root.new-thread(); } }
-                    }
+                    padding-left: 11px; padding-right: 11px; padding-top: 14px; padding-bottom: 10px;
+                    spacing: 8px;
+                    NavButton { label: "＋   新对话"; dark: root.dark; clicked => { root.new-thread(); root.panel = 0; } }
+                    NavButton { label: "⌕   刷新会话"; dark: root.dark; clicked => { root.refresh(); } }
+                    Rectangle { height: 13px; background: transparent; }
+                    Text { text: "最近"; color: root.dark ? #8d8d8d : #777777; font-size: 12px; font-weight: 600; x: 12px; }
                     ListView {
                         vertical-stretch: 1;
                         horizontal-scrollbar-policy: always-off;
                         for item[i] in root.threads: Rectangle {
-                            height: 62px;
-                            background: root.selected-thread == i ? (root.dark ? #2b3446 : #e7efff) : thread-area.has-hover ? (root.dark ? #252a33 : #edf1f6) : transparent;
-                            border-radius: 6px;
-                            Text { x: 10px; y: 10px; width: parent.width - 20px; text: item.title; overflow: elide; color: root.dark ? #e5e7eb : #202632; font-size: 12px; font-weight: root.selected-thread == i ? 650 : 500; }
-                            Text { x: 10px; y: 32px; width: parent.width - 20px; text: item.cwd; overflow: elide; color: root.dark ? #8992a1 : #7a8493; font-size: 10px; }
+                            height: 43px;
+                            border-radius: 9px;
+                            background: root.selected-thread == i ? (root.dark ? #292929 : #e9eaeb) : thread-area.has-hover ? (root.dark ? #242424 : #eeeeef) : transparent;
+                            Text { x: 12px; width: parent.width - 24px; text: item.title; overflow: elide; color: root.dark ? #e4e4e4 : #242424; font-size: 13px; font-weight: root.selected-thread == i ? 600 : 450; vertical-alignment: center; }
                             thread-area := TouchArea { mouse-cursor: pointer; clicked => { root.open-thread(i); } }
                         }
                     }
-                    ActionButton { label: "刷新会话"; dark: root.dark; clicked => { root.refresh(); } }
-                    Text { text: "Powered by Slint"; color: root.dark ? #6e7785 : #98a0aa; font-size: 10px; horizontal-alignment: center; }
+                    Rectangle { height: 1px; background: root.dark ? #292929 : #e7e7e7; }
+                    NavButton { label: "▤   工作区文件"; dark: root.dark; selected: root.panel == 1; clicked => { root.panel = 1; root.load-files(); } }
+                    NavButton { label: "⌁   Git 变更"; dark: root.dark; selected: root.panel == 2; clicked => { root.panel = 2; root.load-git(); } }
+                    NavButton { label: "◉   需要你"; dark: root.dark; selected: root.panel == 3; clicked => { root.panel = 3; root.open-info("needs"); } }
+                    NavButton { label: "⚙   设置与状态"; dark: root.dark; selected: root.panel == 4; clicked => { root.panel = 4; root.open-info("settings"); } }
+                    Rectangle { height: 4px; background: transparent; }
+                    Text { text: root.status; color: root.dark ? #9a9a9a : #676767; font-size: 11px; overflow: elide; x: 12px; }
+                    Text { text: "Powered by Slint"; color: root.dark ? #666666 : #999999; font-size: 10px; x: 12px; }
                 }
             }
-            Rectangle { width: 1px; background: root.dark ? #343940 : #dce0e6; }
+            Rectangle { width: 1px; background: root.dark ? #252525 : #e9e9e9; }
             Rectangle {
-                background: root.dark ? #111318 : #f5f7fa;
+                background: root.dark ? #080808 : #ffffff;
                 VerticalLayout {
                     spacing: 0px;
                     Rectangle {
-                        height: 58px;
-                        background: root.dark ? #16191f : #ffffff;
+                        height: 62px;
+                        background: root.dark ? #080808 : #ffffff;
                         HorizontalLayout {
-                            padding-left: 22px; padding-right: 22px; spacing: 10px;
-                            Text { text: root.title-text; color: root.dark ? #e5e7eb : #202632; font-size: 16px; font-weight: 650; overflow: elide; horizontal-stretch: 1; vertical-alignment: center; }
-                            if root.panel == 0: ActionButton { label: "··· 会话操作"; dark: root.dark; width: 112px; clicked => { root.panel = 5; } }
-                            if root.panel == 0 && root.busy: ActionButton { label: "停止"; dark: root.dark; danger: true; width: 60px; clicked => { root.stop-turn(); } }
+                            padding-left: 28px; padding-right: 26px; spacing: 9px;
+                            Text { text: root.panel == 0 ? (root.title-text == "新会话" ? "Codex Mobile" : root.title-text) : root.panel == 1 ? "工作区" : root.panel == 2 ? "Git 变更" : root.panel == 3 ? "需要你" : root.panel == 4 ? "设置与状态" : "会话操作"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 16px; font-weight: 600; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
+                            if root.panel == 0 && root.connected: ActionButton { label: "会话操作  ···"; dark: root.dark; width: 116px; clicked => { root.panel = 5; } }
+                            if root.panel == 0 && root.busy: ActionButton { label: "停止"; dark: root.dark; danger: true; width: 58px; clicked => { root.stop-turn(); } }
                         }
                     }
-                    Rectangle { height: 1px; background: root.dark ? #343940 : #dce0e6; }
-                    Rectangle {
-                        height: 48px;
-                        background: root.dark ? #16191f : #ffffff;
-                        HorizontalLayout {
-                            padding-left: 18px; spacing: 2px;
-                            NavButton { label: "对话"; dark: root.dark; selected: root.panel == 0; width: 86px; clicked => { root.panel = 0; } }
-                            NavButton { label: "文件"; dark: root.dark; selected: root.panel == 1; width: 86px; clicked => { root.panel = 1; root.load-files(); } }
-                            NavButton { label: "变更"; dark: root.dark; selected: root.panel == 2; width: 86px; clicked => { root.panel = 2; root.load-git(); } }
-                            NavButton { label: "需要你"; dark: root.dark; selected: root.panel == 3; width: 98px; clicked => { root.panel = 3; root.open-info("needs"); } }
-                            NavButton { label: "设置与工具"; dark: root.dark; selected: root.panel == 4 || root.panel == 5; width: 118px; clicked => { root.panel = 4; root.open-info("settings"); } }
+                    if root.panel == 0 && !root.connected: Rectangle {
+                        vertical-stretch: 1;
+                        background: transparent;
+                        Rectangle {
+                            width: min(parent.width - 80px, 420px);
+                            height: 320px;
+                            x: (parent.width - self.width) / 2;
+                            y: (parent.height - self.height) / 2 - 28px;
+                            background: transparent;
+                            VerticalLayout {
+                                spacing: 13px;
+                                Text { text: "连接 Codex"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 29px; font-weight: 500; horizontal-alignment: center; }
+                                Text { text: "连接你的服务器，继续工作。"; color: root.dark ? #9a9a9a : #676767; font-size: 14px; horizontal-alignment: center; }
+                                Rectangle { height: 20px; background: transparent; }
+                                Text { text: "服务器地址"; color: root.dark ? #bcbcbc : #555555; font-size: 12px; }
+                                LineEdit { text <=> root.server-url; placeholder-text: "https://服务器地址"; }
+                                Text { text: "设备口令"; color: root.dark ? #bcbcbc : #555555; font-size: 12px; }
+                                token-input := LineEdit { input-type: password; placeholder-text: "首次连接时输入"; }
+                                CheckBox { text: "在此设备保存登录凭证"; checked <=> root.remember-device; }
+                                ActionButton { label: "继续"; dark: root.dark; prominent: true; clicked => { root.connect(root.server-url, token-input.text, root.remember-device); token-input.text = ""; } }
+                            }
                         }
                     }
-                    Rectangle { height: 1px; background: root.dark ? #343940 : #dce0e6; }
-                    if root.panel == 0: VerticalLayout {
+                    if root.panel == 0 && root.connected: VerticalLayout {
                         spacing: 0px;
-                        ListView {
+                        if root.messages.length == 0: Rectangle {
+                            vertical-stretch: 1;
+                            background: transparent;
+                            Text { text: "这轮改什么？"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 32px; font-weight: 450; horizontal-alignment: center; vertical-alignment: center; }
+                        }
+                        if root.messages.length > 0: ListView {
                             vertical-stretch: 1;
                             horizontal-scrollbar-policy: always-off;
                             for msg in root.messages: Rectangle {
-                                width: parent.width;
-                                height: body.preferred-height + 50px;
+                                height: message-surface.height + 22px;
                                 background: transparent;
-                                Text { x: 28px; y: 10px; text: msg.role; color: msg.tone == 2 ? #df6d72 : (msg.tone == 1 ? (root.dark ? #8992a1 : #657083) : #3b82f6); font-size: 11px; font-weight: 650; }
-                                body := Text { x: 28px; y: 30px; width: parent.width - 64px; text: msg.body; color: msg.tone == 1 ? (root.dark ? #a9b1be : #586272) : (root.dark ? #e5e7eb : #242b36); font-size: 13px; wrap: word-wrap; }
-                            }
-                        }
-                        Rectangle { height: 1px; background: root.dark ? #343940 : #dce0e6; }
-                        Rectangle {
-                            height: 158px; background: root.dark ? #16191f : #ffffff;
-                            VerticalLayout { padding: 16px; spacing: 8px;
-                                TextEdit { text <=> root.draft; placeholder-text: "给 Codex 发送消息…"; vertical-stretch: 1; }
-                                HorizontalLayout { spacing: 8px;
-                                    ActionButton { label: "+ 图片"; dark: root.dark; width: 76px; clicked => { root.attach-image(); } }
-                                    if root.attachment-label != "": ActionButton { label: root.attachment-label + " ×"; dark: root.dark; width: 170px; clicked => { root.clear-attachment(); } }
-                                    Text { text: root.cwd; color: root.dark ? #778291 : #8b95a4; font-size: 10px; overflow: elide; horizontal-stretch: 1; vertical-alignment: center; }
-                                    ActionButton { label: "发送  ↗"; dark: root.dark; prominent: true; width: 96px; clicked => { root.send-message(root.draft); } }
+                                message-surface := Rectangle {
+                                    width: msg.role == "你" ? min(parent.width - 80px, 620px) : min(parent.width - 80px, 830px);
+                                    height: message-body.preferred-height + 38px;
+                                    x: msg.role == "你" ? parent.width - self.width - max(40px, (parent.width - 860px) / 2) : max(40px, (parent.width - 860px) / 2);
+                                    y: 10px;
+                                    border-radius: msg.role == "你" ? 18px : 0px;
+                                    background: msg.role == "你" ? (root.dark ? #32363f : #dde1e8) : transparent;
+                                    if msg.role != "你": Rectangle { x: 0px; y: 11px; width: 27px; height: 27px; border-radius: 14px; background: root.dark ? #262626 : #f1f1f1;
+                                        Text { text: msg.tone == 1 ? "⌘" : "✦"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 15px; horizontal-alignment: center; vertical-alignment: center; }
+                                    }
+                                    message-body := Text {
+                                        x: msg.role == "你" ? 18px : 42px;
+                                        y: 18px;
+                                        width: parent.width - (msg.role == "你" ? 36px : 48px);
+                                        text: msg.body;
+                                        color: msg.tone == 2 ? (root.dark ? #ff8888 : #c43b3b) : msg.role == "你" ? (root.dark ? #e6e9f0 : #1c2430) : (root.dark ? #f2f2f2 : #0d0d0d);
+                                        font-size: 15px;
+                                        wrap: word-wrap;
+                                    }
                                 }
                             }
+                        }
+                        Rectangle {
+                            height: 158px;
+                            background: root.dark ? #080808 : #ffffff;
+                            composer := Rectangle {
+                                width: min(parent.width - 72px, 840px);
+                                height: 116px;
+                                x: (parent.width - self.width) / 2;
+                                y: 12px;
+                                border-radius: 22px;
+                                border-width: 1px;
+                                border-color: root.dark ? #454545 : #d5d5d8;
+                                background: root.dark ? #191d24 : #f8f9fa;
+                                clip: true;
+                                Text { x: 20px; y: 17px; text: "发消息或跟进"; color: root.dark ? #9a9a9a : #777777; font-size: 15px; visible: root.draft == ""; }
+                                TextInput { x: 20px; y: 15px; width: parent.width - 40px; height: 57px; text <=> root.draft; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 15px; single-line: false; wrap: word-wrap; }
+                                HorizontalLayout { x: 12px; y: 74px; width: parent.width - 24px; height: 34px; spacing: 7px;
+                                    ActionButton { label: "+"; dark: root.dark; width: 36px; clicked => { root.attach-image(); } }
+                                    if root.attachment-label != "": ActionButton { label: root.attachment-label + " ×"; dark: root.dark; width: 142px; clicked => { root.clear-attachment(); } }
+                                    Text { text: root.model == "" ? "模型" : root.model; color: root.dark ? #9a9a9a : #676767; font-size: 12px; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
+                                    Rectangle { width: 34px; height: 34px; border-radius: 17px; background: root.dark ? #f2f2f2 : #0d0d0d;
+                                        Text { text: "↑"; color: root.dark ? #0d0d0d : #ffffff; font-size: 19px; font-weight: 650; horizontal-alignment: center; vertical-alignment: center; }
+                                        send-area := TouchArea { mouse-cursor: pointer; clicked => { root.send-message(root.draft); } }
+                                    }
+                                }
+                            }
+                            Text { y: 136px; text: root.cwd; color: root.dark ? #777777 : #999999; font-size: 11px; width: parent.width; horizontal-alignment: center; overflow: elide; }
                         }
                     }
                     if root.panel == 1: VerticalLayout {
@@ -254,11 +284,11 @@ export component AppWindow inherits Window {
                             LineEdit { text <=> root.search-query; placeholder-text: "搜索文件"; horizontal-stretch: 1; accepted(value) => { root.file-search(value); } }
                             ActionButton { label: "搜索"; dark: root.dark; width: 68px; clicked => { root.file-search(root.search-query); } }
                         }
-                        Text { text: root.file-path; color: root.dark ? #8992a1 : #657083; font-size: 11px; overflow: elide; }
+                        Text { text: root.file-path; color: root.dark ? #9a9a9a : #676767; font-size: 11px; overflow: elide; }
                         HorizontalLayout { spacing: 12px;
                             ListView { width: 280px; horizontal-scrollbar-policy: always-off;
-                                for file[i] in root.files: Rectangle { height: 40px; background: file-area.has-hover ? (root.dark ? #252a33 : #edf1f6) : transparent;
-                                    Text { x: 10px; width: parent.width - 20px; text: (file.directory ? "▸  " : "   ") + file.name; color: root.dark ? #e5e7eb : #202632; font-size: 12px; overflow: elide; vertical-alignment: center; }
+                                for file[i] in root.files: Rectangle { height: 40px; background: file-area.has-hover ? (root.dark ? #242424 : #eeeeee) : transparent;
+                                    Text { x: 10px; width: parent.width - 20px; text: (file.directory ? "▸  " : "   ") + file.name; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 12px; overflow: elide; vertical-alignment: center; }
                                     file-area := TouchArea { mouse-cursor: pointer; clicked => { root.file-open(i); } }
                                 }
                             }
@@ -269,9 +299,9 @@ export component AppWindow inherits Window {
                         padding: 18px; spacing: 12px;
                         ActionButton { label: "刷新 Git 变更"; dark: root.dark; width: 140px; clicked => { root.load-git(); } }
                         ListView { vertical-stretch: 1; horizontal-scrollbar-policy: always-off;
-                            for item in root.info: Rectangle { height: 46px; background: git-area.has-hover ? (root.dark ? #252a33 : #edf1f6) : transparent;
-                                Text { x: 10px; y: 6px; text: item.title; color: root.dark ? #e5e7eb : #202632; font-size: 12px; }
-                                Text { x: 10px; y: 25px; text: item.detail; color: root.dark ? #8992a1 : #657083; font-size: 11px; }
+                            for item in root.info: Rectangle { height: 46px; background: git-area.has-hover ? (root.dark ? #242424 : #eeeeee) : transparent;
+                                Text { x: 10px; y: 6px; text: item.title; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 12px; }
+                                Text { x: 10px; y: 25px; text: item.detail; color: root.dark ? #9a9a9a : #676767; font-size: 11px; }
                                 git-area := TouchArea { mouse-cursor: pointer; clicked => { root.open-info("git:" + item.title); } }
                             }
                         }
@@ -279,11 +309,11 @@ export component AppWindow inherits Window {
                     }
                     if root.panel == 3: VerticalLayout {
                         padding: 18px; spacing: 12px;
-                        Text { text: "待处理请求"; color: root.dark ? #e5e7eb : #202632; font-size: 17px; font-weight: 650; }
+                        Text { text: "待处理请求"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 17px; font-weight: 650; }
                         ListView { vertical-stretch: 1; horizontal-scrollbar-policy: always-off;
-                            for need[i] in root.needs: Rectangle { height: need.question ? 178px : 124px; background: root.dark ? #1a1d23 : #ffffff; border-color: root.dark ? #343940 : #d6dae1; border-width: 1px; border-radius: 6px;
-                                Text { x: 14px; y: 12px; width: parent.width - 28px; text: need.title; color: root.dark ? #e5e7eb : #202632; font-size: 13px; font-weight: 650; overflow: elide; }
-                                Text { x: 14px; y: 38px; width: parent.width - 28px; text: need.detail; color: root.dark ? #9ca3af : #657083; font-size: 11px; overflow: elide; }
+                            for need[i] in root.needs: Rectangle { height: need.question ? 178px : 124px; background: root.dark ? #191919 : #ffffff; border-color: root.dark ? #2b2b2b : #e3e3e3; border-width: 1px; border-radius: 6px;
+                                Text { x: 14px; y: 12px; width: parent.width - 28px; text: need.title; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 650; overflow: elide; }
+                                Text { x: 14px; y: 38px; width: parent.width - 28px; text: need.detail; color: root.dark ? #9a9a9a : #676767; font-size: 11px; overflow: elide; }
                                 if !need.question: HorizontalLayout { x: 14px; y: 74px; height: 34px; spacing: 8px;
                                     ActionButton { label: "批准"; dark: root.dark; prominent: true; width: 76px; clicked => { root.need-decision(i, "accept"); } }
                                     ActionButton { label: "本会话批准"; dark: root.dark; width: 108px; clicked => { root.need-decision(i, "acceptForSession"); } }
@@ -301,33 +331,38 @@ export component AppWindow inherits Window {
                     }
                     if root.panel == 4: VerticalLayout {
                         padding: 20px; spacing: 12px;
-                        Text { text: "偏好设置"; color: root.dark ? #e5e7eb : #202632; font-size: 18px; font-weight: 650; }
+                        Text { text: "偏好设置"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; font-weight: 650; }
                         HorizontalLayout { spacing: 12px;
-                            Text { text: "外观"; color: root.dark ? #8992a1 : #657083; vertical-alignment: center; width: 80px; }
+                            Text { text: "外观"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
                             ActionButton { label: "跟随系统"; dark: root.dark; prominent: root.theme-mode == 0; width: 100px; clicked => { root.set-theme(0); } }
                             ActionButton { label: "深色"; dark: root.dark; prominent: root.theme-mode == 1; width: 70px; clicked => { root.set-theme(1); } }
                             ActionButton { label: "浅色"; dark: root.dark; prominent: root.theme-mode == 2; width: 70px; clicked => { root.set-theme(2); } }
                         }
-                        Rectangle { height: 1px; background: root.dark ? #343940 : #dce0e6; }
-                        Text { text: "本轮模型与权限"; color: root.dark ? #e5e7eb : #202632; font-size: 16px; font-weight: 650; }
+                        HorizontalLayout { spacing: 8px;
+                            Text { text: "设备"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
+                            if root.connected: ActionButton { label: "断开连接"; dark: root.dark; width: 96px; clicked => { root.disconnect(); } }
+                            ActionButton { label: "忘记登录"; dark: root.dark; danger: true; width: 96px; clicked => { root.forget-device(); } }
+                        }
+                        Rectangle { height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
+                        Text { text: "本轮模型与权限"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 16px; font-weight: 650; }
                         HorizontalLayout { spacing: 12px;
-                            Text { text: "模型"; color: root.dark ? #8992a1 : #657083; vertical-alignment: center; width: 80px; }
+                            Text { text: "模型"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
                             ComboBox { model: root.models; current-value: root.model; horizontal-stretch: 1; selected(value) => { root.set-model(value); } }
                         }
                         HorizontalLayout { spacing: 12px;
-                            Text { text: "推理"; color: root.dark ? #8992a1 : #657083; vertical-alignment: center; width: 80px; }
+                            Text { text: "推理"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
                             ComboBox { model: ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]; current-value: root.effort; horizontal-stretch: 1; selected(value) => { root.set-effort(value); } }
                         }
                         HorizontalLayout { spacing: 12px;
-                            Text { text: "审批"; color: root.dark ? #8992a1 : #657083; vertical-alignment: center; width: 80px; }
+                            Text { text: "审批"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
                             ComboBox { model: ["untrusted", "on-request", "never"]; current-value: root.approval; horizontal-stretch: 1; selected(value) => { root.set-approval(value); } }
                         }
                         HorizontalLayout { spacing: 12px;
-                            Text { text: "沙箱"; color: root.dark ? #8992a1 : #657083; vertical-alignment: center; width: 80px; }
+                            Text { text: "沙箱"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
                             ComboBox { model: ["read-only", "workspace-write", "danger-full-access"]; current-value: root.sandbox; horizontal-stretch: 1; selected(value) => { root.set-sandbox(value); } }
                         }
-                        Rectangle { height: 1px; background: root.dark ? #343940 : #dce0e6; }
-                        Text { text: "控制台"; color: root.dark ? #e5e7eb : #202632; font-size: 16px; font-weight: 650; }
+                        Rectangle { height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
+                        Text { text: "控制台"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 16px; font-weight: 650; }
                         HorizontalLayout { spacing: 8px;
                             ActionButton { label: "账号"; dark: root.dark; width: 80px; clicked => { root.open-info("account"); } }
                             ActionButton { label: "健康"; dark: root.dark; width: 80px; clicked => { root.open-info("health"); } }
@@ -337,15 +372,15 @@ export component AppWindow inherits Window {
                         }
                         ListView { vertical-stretch: 1; horizontal-scrollbar-policy: always-off;
                             for item in root.info: Rectangle { height: 54px; background: transparent;
-                                Text { x: 0px; y: 4px; text: item.title; color: root.dark ? #e5e7eb : #202632; font-size: 12px; font-weight: 600; }
-                                Text { x: 0px; y: 25px; width: parent.width; text: item.detail; overflow: elide; color: root.dark ? #8992a1 : #657083; font-size: 11px; }
+                                Text { x: 0px; y: 4px; text: item.title; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 12px; font-weight: 600; }
+                                Text { x: 0px; y: 25px; width: parent.width; text: item.detail; overflow: elide; color: root.dark ? #9a9a9a : #676767; font-size: 11px; }
                             }
                         }
                     }
                     if root.panel == 5: VerticalLayout {
                         padding: 20px; spacing: 12px;
-                        Text { text: "会话操作"; color: root.dark ? #e5e7eb : #202632; font-size: 18px; font-weight: 650; }
-                        Text { text: "这些操作直接作用于当前 Codex 原生会话。"; color: root.dark ? #8992a1 : #657083; font-size: 12px; }
+                        Text { text: "会话操作"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; font-weight: 650; }
+                        Text { text: "这些操作直接作用于当前 Codex 原生会话。"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; }
                         HorizontalLayout { spacing: 8px;
                             ActionButton { label: "重命名"; dark: root.dark; width: 94px; clicked => { root.session-action("rename"); } }
                             ActionButton { label: "分叉"; dark: root.dark; width: 82px; clicked => { root.session-action("fork"); } }
@@ -357,7 +392,7 @@ export component AppWindow inherits Window {
                             ActionButton { label: "回退"; dark: root.dark; width: 82px; clicked => { root.session-action("rollback"); } }
                             ActionButton { label: "删除"; dark: root.dark; danger: true; width: 82px; clicked => { root.session-action("delete"); } }
                         }
-                        Text { text: "重命名、回退和审查会在下方打开参数输入。"; color: root.dark ? #8992a1 : #657083; font-size: 12px; }
+                        Text { text: "重命名、回退和审查会在下方打开参数输入。"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; }
                         action-input := LineEdit { placeholder-text: "名称 / 回退轮数 / 审查说明"; }
                         ActionButton { label: "执行当前操作"; dark: root.dark; prominent: true; width: 130px; clicked => { root.session-action("submit:" + action-input.text); } }
                     }
