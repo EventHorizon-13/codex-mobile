@@ -89,3 +89,34 @@ jobs:
           name: CodexMobile-visual-preview
           path: preview/*.png
           retention-days: 7
+
+  web-reference:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install web test dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Capture actual web UI
+        run: |
+          node scripts/mock-server.js > web-reference-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for _ in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:3232/ >/dev/null; then break; fi
+            sleep 0.5
+          done
+          node scripts/capture-desktop-reference.mjs
+      - name: Upload web reference
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodexMobile-web-reference
+          path: reference/*.png
+          retention-days: 7
