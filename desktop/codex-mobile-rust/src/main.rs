@@ -51,6 +51,7 @@ struct State {
     threads: Vec<ThreadRow>,
     files: Vec<FileRow>,
     needs: Vec<NeedRow>,
+    raw_needs: Vec<Value>,
     git: Vec<(String, String)>,
     thread_id: String,
     instance_id: String,
@@ -181,7 +182,8 @@ fn handle_reply(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
             if ui.get_model().is_empty() { if let Some(first) = names.first() { ui.set_model(first.clone()); } }
         }
         "needs-you:snapshot" => {
-            s.needs = value["needs"].as_array().into_iter().flatten().map(parse_need).collect();
+            s.raw_needs = value["needs"].as_array().cloned().unwrap_or_default();
+            s.needs = s.raw_needs.iter().map(parse_need).collect();
             ui.set_needs(ModelRc::new(VecModel::from(s.needs.clone())));
         }
         "fs:readDirectory" => {
@@ -241,12 +243,14 @@ fn parse_need(need: &Value) -> NeedRow {
     let kind = text(need, "kind");
     let command = text(payload, "command");
     let title = if kind == "question" { "需要回答".to_string() } else { "需要审批".to_string() };
+    let questions = payload["questions"].as_array();
+    let question_detail = questions.map(|items| items.iter().map(|q| format!("{}：{}", text(q, "header"), text(q, "question"))).collect::<Vec<_>>().join("；")).unwrap_or_default();
     NeedRow {
         id: text(need, "needId").into(), title: title.into(),
-        detail: if command.is_empty() { text(payload, "reason").into() } else { command.into() },
+        detail: if kind == "question" { question_detail.into() } else if command.is_empty() { text(payload, "reason").into() } else { command.into() },
         thread_id: text(target, "threadId").into(), instance_id: text(target, "instanceId").into(),
         approval_id: text(target, "requestId").into(), turn_id: text(target, "turnId").into(),
-        item_id: text(target, "itemId").into(), decisions: payload["availableDecisions"].to_string().into(),
+        item_id: text(target, "itemId").into(), decisions: payload["availableDecisions"].to_string().into(), question: kind == "question",
     }
 }
 
@@ -511,6 +515,25 @@ fn register_ops_callbacks(ui: &AppWindow, state: Arc<Mutex<State>>, tx: mpsc::Un
             let decision = if decision == "decline" && !need.decisions.contains("decline") { "cancel" } else { decision.as_str() };
             if !need.decisions.contains(decision) { ui.set_status("该请求不支持这项决定".into()); return; }
             rpc(&tx, "user:approval", "user:approval", json!({"needId":need.id,"approvalId":need.approval_id,"decision":decision,"threadId":need.thread_id,"instanceId":need.instance_id,"turnId":need.turn_id,"itemId":need.item_id}));
+        });
+    }
+    {
+        let state = state.clone(); let tx = tx.clone(); let weak = ui.as_weak();
+        ui.on_need_answer(move |index, answer| {
+            let Some(ui) = weak.upgrade() else { return; };
+            let s = state.lock().unwrap();
+            let Some(need) = s.needs.get(index as usize) else { return; };
+            let Some(raw) = s.raw_needs.get(index as usize) else { return; };
+            let Some(questions) = raw["payload"]["questions"].as_array() else { return; };
+            let answer = answer.to_string();
+            let values: Vec<&str> = if answer.is_empty() { Vec::new() } else { answer.split(';').map(str::trim).collect() };
+            if !values.is_empty() && values.len() != questions.len() { ui.set_status(format!("此请求有 {} 个问题，请用分号分隔答案", questions.len()).into()); return; }
+            let mut answers = serde_json::Map::new();
+            for (i, question) in questions.iter().enumerate() {
+                let id = text(question, "id");
+                if !id.is_empty() { answers.insert(id, json!(values.get(i).filter(|v| !v.is_empty()).map(|v| vec![*v]).unwrap_or_default())); }
+            }
+            rpc(&tx, "user:approval", "user:approval", json!({"needId":need.id,"approvalId":need.approval_id,"answers":answers,"threadId":need.thread_id,"instanceId":need.instance_id,"turnId":need.turn_id,"itemId":need.item_id}));
         });
     }
     {

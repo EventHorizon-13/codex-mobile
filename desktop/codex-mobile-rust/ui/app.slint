@@ -3,7 +3,7 @@ import { Palette, LineEdit, TextEdit, ListView, ComboBox, CheckBox } from "std-w
 export struct ThreadRow { id: string, title: string, cwd: string }
 export struct MessageRow { role: string, body: string, tone: int }
 export struct FileRow { name: string, path: string, directory: bool }
-export struct NeedRow { id: string, title: string, detail: string, thread-id: string, instance-id: string, approval-id: string, turn-id: string, item-id: string, decisions: string }
+export struct NeedRow { id: string, title: string, detail: string, thread-id: string, instance-id: string, approval-id: string, turn-id: string, item-id: string, decisions: string, question: bool }
 export struct InfoRow { title: string, detail: string }
 
 component ActionButton inherits Rectangle {
@@ -55,9 +55,10 @@ export component AppWindow inherits Window {
     min-height: 570px;
     default-font-family: "Segoe UI";
     background: root.dark ? #111318 : #f5f7fa;
-    Palette.color-scheme: root.dark ? ColorScheme.dark : ColorScheme.light;
 
     in-out property <bool> dark: true;
+    init => { Palette.color-scheme = root.dark ? ColorScheme.dark : ColorScheme.light; }
+    changed dark => { Palette.color-scheme = root.dark ? ColorScheme.dark : ColorScheme.light; }
     in-out property <int> theme-mode: 0;
     in-out property <bool> connected: false;
     in-out property <bool> remember-device: true;
@@ -100,6 +101,7 @@ export component AppWindow inherits Window {
     callback load-files();
     callback load-git();
     callback need-decision(int, string);
+    callback need-answer(int, string);
     callback open-info(string);
     callback set-theme(int);
     callback set-model(string);
@@ -279,13 +281,20 @@ export component AppWindow inherits Window {
                         padding: 18px; spacing: 12px;
                         Text { text: "待处理请求"; color: root.dark ? #e5e7eb : #202632; font-size: 17px; font-weight: 650; }
                         ListView { vertical-stretch: 1; horizontal-scrollbar-policy: always-off;
-                            for need[i] in root.needs: Rectangle { height: 124px; background: root.dark ? #1a1d23 : #ffffff; border-color: root.dark ? #343940 : #d6dae1; border-width: 1px; border-radius: 6px;
+                            for need[i] in root.needs: Rectangle { height: need.question ? 178px : 124px; background: root.dark ? #1a1d23 : #ffffff; border-color: root.dark ? #343940 : #d6dae1; border-width: 1px; border-radius: 6px;
                                 Text { x: 14px; y: 12px; width: parent.width - 28px; text: need.title; color: root.dark ? #e5e7eb : #202632; font-size: 13px; font-weight: 650; overflow: elide; }
                                 Text { x: 14px; y: 38px; width: parent.width - 28px; text: need.detail; color: root.dark ? #9ca3af : #657083; font-size: 11px; overflow: elide; }
-                                HorizontalLayout { x: 14px; y: 74px; height: 34px; spacing: 8px;
+                                if !need.question: HorizontalLayout { x: 14px; y: 74px; height: 34px; spacing: 8px;
                                     ActionButton { label: "批准"; dark: root.dark; prominent: true; width: 76px; clicked => { root.need-decision(i, "accept"); } }
                                     ActionButton { label: "本会话批准"; dark: root.dark; width: 108px; clicked => { root.need-decision(i, "acceptForSession"); } }
                                     ActionButton { label: "拒绝"; dark: root.dark; danger: true; width: 76px; clicked => { root.need-decision(i, "decline"); } }
+                                }
+                                if need.question: VerticalLayout { x: 14px; y: 66px; width: parent.width - 28px; height: 98px; spacing: 8px;
+                                    answer := LineEdit { placeholder-text: "输入答案；多个问题用分号分隔"; }
+                                    HorizontalLayout { spacing: 8px;
+                                        ActionButton { label: "提交回答"; dark: root.dark; prominent: true; width: 88px; clicked => { root.need-answer(i, answer.text); } }
+                                        ActionButton { label: "跳过"; dark: root.dark; width: 70px; clicked => { root.need-answer(i, ""); } }
+                                    }
                                 }
                             }
                         }
