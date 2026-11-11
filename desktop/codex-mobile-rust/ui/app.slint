@@ -1,7 +1,7 @@
 import { Palette, LineEdit, TextEdit, ListView, ComboBox, CheckBox } from "std-widgets.slint";
 
 export struct ThreadRow { id: string, title: string, cwd: string, status: string, meta: string }
-export struct MessageRow { role: string, body: string, tone: int, width: int }
+export struct MessageRow { role: string, body: string, tone: int }
 export struct FileRow { name: string, path: string, directory: bool }
 export struct NeedRow { id: string, title: string, detail: string, thread-id: string, instance-id: string, approval-id: string, turn-id: string, item-id: string, decisions: string, question: bool }
 export struct InfoRow { title: string, detail: string }
@@ -372,10 +372,11 @@ export component AppWindow inherits Window {
                                 horizontal-scrollbar-policy: always-off;
                                 for msg in root.messages: Rectangle {
                                     width: parent.width;
-                                    property <length> bubble-width: min(parent.width, msg.width * 1px);
+                                    property <length> bubble-width: min(parent.width, measure.preferred-width + 28px);
                                     property <length> bubble-height: body-text.preferred-height + 16px;
                                     height: msg.role == "你" ? bubble-height + 20px : body-text.preferred-height + 20px;
                                     background: transparent;
+                                    measure := Text { x: 0px; y: 0px; text: msg.body; font-size: 16px; opacity: 0; wrap: no-wrap; }
                                     if msg.role == "你": Rectangle {
                                         width: bubble-width; height: bubble-height; x: parent.width - self.width;
                                         background: root.dark ? #32363f : #dde1e8; border-radius: 12px;

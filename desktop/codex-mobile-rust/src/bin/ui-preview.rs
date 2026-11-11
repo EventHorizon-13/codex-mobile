@@ -19,11 +19,11 @@ fn main() -> Result<(), slint::PlatformError> {
     ])));
     ui.set_selected_thread(0);
     ui.set_messages(ModelRc::new(VecModel::from(if empty { Vec::new() } else { vec![
-        MessageRow { role: "你".into(), body: "TURN_GROUP_FIXTURE".into(), tone: 0, width: 206 },
-        MessageRow { role: "Codex".into(), body: "Before the tool.".into(), tone: 0, width: 0 },
-        MessageRow { role: "活动".into(), body: "printf grouped".into(), tone: 1, width: 0 },
-        MessageRow { role: "活动".into(), body: "用时 0 秒".into(), tone: 1, width: 0 },
-        MessageRow { role: "Codex".into(), body: "After the tool.".into(), tone: 0, width: 0 },
+        MessageRow { role: "你".into(), body: "TURN_GROUP_FIXTURE".into(), tone: 0 },
+        MessageRow { role: "Codex".into(), body: "Before the tool.".into(), tone: 0 },
+        MessageRow { role: "活动".into(), body: "printf grouped".into(), tone: 1 },
+        MessageRow { role: "活动".into(), body: "用时 0 秒".into(), tone: 1 },
+        MessageRow { role: "Codex".into(), body: "After the tool.".into(), tone: 0 },
     ] })));
     ui.run()
 }

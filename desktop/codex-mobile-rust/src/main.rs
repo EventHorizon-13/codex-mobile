@@ -75,16 +75,6 @@ fn one_line(value: &str, limit: usize) -> String {
     if chars.next().is_some() { out.push('…'); }
     out
 }
-fn bubble_width(value: &str) -> i32 {
-    let width = value.lines().map(|line| line.chars().map(|ch| {
-        if ch.is_ascii_uppercase() || ch.is_ascii_digit() { 10usize }
-        else if ch.is_ascii_lowercase() { 8usize }
-        else if ch.is_ascii_whitespace() { 4usize }
-        else if ch.is_ascii() { 9usize }
-        else { 16usize }
-    }).sum::<usize>()).max().unwrap_or(0);
-    width.saturating_add(28).clamp(96, 456) as i32
-}
 fn civil_from_days(days: i64) -> (i64, u32, u32) {
     let z = days + 719_468;
     let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
@@ -123,7 +113,7 @@ fn add_message(ui: &AppWindow, state: &mut State, role: &str, body: &str, tone: 
         state.tool_index = state.tool_index.map(|i| i.saturating_sub(1));
     }
     let body = body.chars().take(100_000).collect::<String>();
-    rows.push(MessageRow { role: role.into(), body: body.clone().into(), tone, width: bubble_width(&body) });
+    rows.push(MessageRow { role: role.into(), body: body.into(), tone });
 }
 fn append_message_body(ui: &AppWindow, index: usize, text: &str) {
     let model = messages(ui);
