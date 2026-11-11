@@ -180,11 +180,11 @@ export component AppWindow inherits Window {
                         horizontal-scrollbar-policy: always-off;
                         for item[i] in root.threads: Rectangle {
                             height: 62px;
-                            background: root.selected-thread == i ? (root.dark ? #2b3446 : #e7efff) : area.has-hover ? (root.dark ? #252a33 : #edf1f6) : transparent;
+                            background: root.selected-thread == i ? (root.dark ? #2b3446 : #e7efff) : thread-area.has-hover ? (root.dark ? #252a33 : #edf1f6) : transparent;
                             border-radius: 6px;
                             Text { x: 10px; y: 10px; width: parent.width - 20px; text: item.title; overflow: elide; color: root.dark ? #e5e7eb : #202632; font-size: 12px; font-weight: root.selected-thread == i ? 650 : 500; }
                             Text { x: 10px; y: 32px; width: parent.width - 20px; text: item.cwd; overflow: elide; color: root.dark ? #8992a1 : #7a8493; font-size: 10px; }
-                            area := TouchArea { mouse-cursor: pointer; clicked => { root.open-thread(i); } }
+                            thread-area := TouchArea { mouse-cursor: pointer; clicked => { root.open-thread(i); } }
                         }
                     }
                     ActionButton { label: "刷新会话"; dark: root.dark; clicked => { root.refresh(); } }
@@ -257,9 +257,9 @@ export component AppWindow inherits Window {
                         Text { text: root.file-path; color: root.dark ? #8992a1 : #657083; font-size: 11px; overflow: elide; }
                         HorizontalLayout { spacing: 12px;
                             ListView { width: 280px; horizontal-scrollbar-policy: always-off;
-                                for file[i] in root.files: Rectangle { height: 40px; background: area.has-hover ? (root.dark ? #252a33 : #edf1f6) : transparent;
+                                for file[i] in root.files: Rectangle { height: 40px; background: file-area.has-hover ? (root.dark ? #252a33 : #edf1f6) : transparent;
                                     Text { x: 10px; width: parent.width - 20px; text: (file.directory ? "▸  " : "   ") + file.name; color: root.dark ? #e5e7eb : #202632; font-size: 12px; overflow: elide; vertical-alignment: center; }
-                                    area := TouchArea { mouse-cursor: pointer; clicked => { root.file-open(i); } }
+                                    file-area := TouchArea { mouse-cursor: pointer; clicked => { root.file-open(i); } }
                                 }
                             }
                             TextEdit { text: root.preview; read-only: true; horizontal-stretch: 1; }
@@ -269,10 +269,10 @@ export component AppWindow inherits Window {
                         padding: 18px; spacing: 12px;
                         ActionButton { label: "刷新 Git 变更"; dark: root.dark; width: 140px; clicked => { root.load-git(); } }
                         ListView { vertical-stretch: 1; horizontal-scrollbar-policy: always-off;
-                            for item in root.info: Rectangle { height: 46px; background: area.has-hover ? (root.dark ? #252a33 : #edf1f6) : transparent;
+                            for item in root.info: Rectangle { height: 46px; background: git-area.has-hover ? (root.dark ? #252a33 : #edf1f6) : transparent;
                                 Text { x: 10px; y: 6px; text: item.title; color: root.dark ? #e5e7eb : #202632; font-size: 12px; }
                                 Text { x: 10px; y: 25px; text: item.detail; color: root.dark ? #8992a1 : #657083; font-size: 11px; }
-                                area := TouchArea { mouse-cursor: pointer; clicked => { root.open-info("git:" + item.title); } }
+                                git-area := TouchArea { mouse-cursor: pointer; clicked => { root.open-info("git:" + item.title); } }
                             }
                         }
                         TextEdit { text: root.preview; read-only: true; height: 240px; }

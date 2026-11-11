@@ -20,6 +20,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/codex-mobile-rust
+          cache-on-failure: 'true'
       - name: Build Windows x64 app
         shell: pwsh
         run: cargo build --release --manifest-path desktop/codex-mobile-rust/Cargo.toml
