@@ -26,7 +26,34 @@ jobs:
           cache-on-failure: 'true'
       - name: Build Windows x64 app
         shell: pwsh
-        run: cargo build --release --manifest-path desktop/codex-mobile-rust/Cargo.toml
+        run: cargo build --release --bins --manifest-path desktop/codex-mobile-rust/Cargo.toml
+      - name: Capture native UI previews
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -AssemblyName System.Drawing
+          New-Item -ItemType Directory -Force -Path preview | Out-Null
+          foreach ($theme in @('dark', 'light')) {
+            $app = Start-Process -FilePath desktop/codex-mobile-rust/target/release/ui-preview.exe -ArgumentList "--$theme" -PassThru
+            Start-Sleep -Seconds 4
+            if ($app.HasExited) { throw "UI preview exited early in $theme mode" }
+            $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bitmap = [System.Drawing.Bitmap]::new($bounds.Width, $bounds.Height)
+            $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+            $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+            $bitmap.Save("$PWD/preview/$theme.png", [System.Drawing.Imaging.ImageFormat]::Png)
+            $graphics.Dispose()
+            $bitmap.Dispose()
+            Stop-Process -Id $app.Id
+          }
+      - name: Upload UI previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodexMobile-Windows-preview
+          path: preview/*.png
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Package app
         shell: pwsh
         run: |
