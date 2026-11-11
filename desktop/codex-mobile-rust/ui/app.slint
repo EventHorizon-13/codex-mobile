@@ -370,14 +370,16 @@ export component AppWindow inherits Window {
                         if root.messages.length == 0: Rectangle {
                             vertical-stretch: 1;
                             Rectangle {
-                                width: min(parent.width - 48px, 720px); height: 292px;
+                                width: min(parent.width - 48px, 720px); height: 293px;
                                 x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2 - 12px;
                                 background: transparent;
                                 VerticalLayout { spacing: 0px;
                                     Text { text: "这轮改什么？"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 28px; font-weight: 600; horizontal-alignment: center; }
                                     Rectangle { height: 26px; background: transparent; }
+                                    Rectangle { height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
                                     Rectangle {
-                                        height: 50px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; border-radius: 0px; background: row-suggest-one.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        height: 50px; background: row-suggest-one.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
                                         HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
                                             Text { text: "↻"; color: root.dark ? #9a9a9a : #676767; font-size: 16px; vertical-alignment: center; }
                                             Text { text: "继续最近会话"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
@@ -386,7 +388,8 @@ export component AppWindow inherits Window {
                                         row-suggest-one := TouchArea { mouse-cursor: pointer; clicked => { if root.threads.length > 0 { root.open-thread(0); } else { root.new-thread(); } root.panel = 0; } }
                                     }
                                     Rectangle {
-                                        height: 50px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: row-suggest-two.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        height: 50px; background: row-suggest-two.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
                                         HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
                                             IconFolder { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
                                             Text { text: "打开工作区文件"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
@@ -395,7 +398,8 @@ export component AppWindow inherits Window {
                                         row-suggest-two := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 1; root.load-files(); } }
                                     }
                                     Rectangle {
-                                        height: 50px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: row-suggest-three.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        height: 50px; background: row-suggest-three.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
                                         HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
                                             IconGit { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
                                             Text { text: "查看 Git 变更"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
@@ -404,7 +408,8 @@ export component AppWindow inherits Window {
                                         row-suggest-three := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 2; root.load-git(); } }
                                     }
                                     Rectangle {
-                                        height: 50px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: row-suggest-four.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        height: 50px; background: row-suggest-four.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
                                         HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
                                             IconAlert { tint: root.dark ? #e09a10 : #9a5f22; cross-axis-self-alignment: center; }
                                             Text { text: "处理待审批"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
@@ -455,8 +460,8 @@ export component AppWindow inherits Window {
                                 background: root.dark ? #191919 : #ffffff; clip: true;
                                 Text { x: 16px; y: 12px; text: "描述要改的代码"; color: root.dark ? #777777 : #999999; font-size: 18px; visible: root.draft == ""; }
                                 TextInput { x: 16px; y: 9px; width: parent.width - 32px; height: 58px; text <=> root.draft; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; single-line: false; wrap: word-wrap; }
-                                Rectangle { x: 10px; y: 73px; height: 34px; border-radius: 17px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: root.dark ? #121212 : #f8f9fa;
-                                    HorizontalLayout { padding-left: 12px; padding-right: 12px; spacing: 6px;
+                                if root.attachment-label == "": Rectangle { x: 10px; y: 73px; width: min(parent.width - 148px, 360px); height: 34px; border-radius: 17px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: root.dark ? #121212 : #f8f9fa;
+                                    HorizontalLayout { alignment: start; padding-left: 12px; padding-right: 12px; spacing: 6px;
                                         Text { text: root.model == "" ? "模型" : root.model; color: root.dark ? #9a9a9a : #676767; font-size: 13px; font-weight: 600; overflow: elide; wrap: no-wrap; max-width: 190px; vertical-alignment: center; }
                                         Text { text: "·"; color: root.dark ? #666666 : #aaaaaa; font-size: 13px; vertical-alignment: center; }
                                         Text { text: root.approval; color: root.dark ? #9a9a9a : #676767; font-size: 13px; font-weight: 600; overflow: elide; wrap: no-wrap; max-width: 110px; vertical-alignment: center; }
@@ -464,6 +469,10 @@ export component AppWindow inherits Window {
                                         Text { text: root.effort; color: root.dark ? #9a9a9a : #676767; font-size: 13px; font-weight: 600; vertical-alignment: center; }
                                     }
                                     settings-chip := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 4; root.open-info("settings"); } }
+                                }
+                                if root.attachment-label != "": Rectangle { x: 10px; y: 73px; width: min(parent.width - 148px, 360px); height: 34px; border-radius: 17px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: root.dark ? #121212 : #f8f9fa;
+                                    Text { x: 12px; width: parent.width - 24px; text: root.attachment-label + " ×"; color: root.dark ? #d0d0d0 : #303030; font-size: 13px; font-weight: 600; vertical-alignment: center; overflow: elide; wrap: no-wrap; }
+                                    attachment-chip := TouchArea { mouse-cursor: pointer; clicked => { root.clear-attachment(); } }
                                 }
                                 Rectangle { x: parent.width - 82px; y: 72px; width: 34px; height: 34px; border-radius: 12px; background: root.dark ? #191919 : #ffffff;
                                     IconClip { x: 7.5px; y: 7.5px; tint: root.dark ? #9a9a9a : #676767; }
@@ -474,7 +483,6 @@ export component AppWindow inherits Window {
                                     if !root.busy: IconSend { x: 8px; y: 8px; tint: root.dark ? #0d0d0d : #ffffff; }
                                     send-area := TouchArea { mouse-cursor: pointer; clicked => { if root.busy { root.stop-turn(); } else { root.send-message(root.draft); } } }
                                 }
-                                if root.attachment-label != "": Text { x: 112px; y: 78px; width: min(parent.width - 210px, 300px); text: root.attachment-label + " ×"; color: root.dark ? #e6e9f0 : #1c2430; font-size: 12px; overflow: elide; wrap: no-wrap; }
                             }
                         }
                     }
