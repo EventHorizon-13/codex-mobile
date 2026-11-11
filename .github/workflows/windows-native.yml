@@ -77,16 +77,32 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Install native display build libraries
-        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libfontconfig1-dev libfreetype6-dev libssl-dev libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxcursor-dev libxi-dev libgl1-mesa-dev libegl1-mesa-dev
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libfontconfig1-dev libfreetype6-dev libssl-dev libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxcursor-dev libxi-dev libgl1-mesa-dev libegl1-mesa-dev libgl1-mesa-dri xvfb scrot fonts-noto-cjk
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: desktop/codex-mobile-rust
           cache-on-failure: 'true'
       - name: Build visual preview on GitHub
         run: cargo build --release --bin ui-preview --manifest-path desktop/codex-mobile-rust/Cargo.toml
-      - name: Upload Linux preview executable
+      - name: Render dark and light previews
+        run: |
+          mkdir -p preview
+          xvfb-run -a -s '-screen 0 1280x800x24' bash -c '
+            set -eu
+            export LIBGL_ALWAYS_SOFTWARE=1
+            for theme in dark light; do
+              desktop/codex-mobile-rust/target/release/ui-preview --$theme >"preview/$theme.log" 2>&1 &
+              app_pid=$!
+              sleep 4
+              if ! kill -0 "$app_pid" 2>/dev/null; then cat "preview/$theme.log"; exit 1; fi
+              scrot "preview/$theme.png"
+              kill "$app_pid"
+              wait "$app_pid" || true
+            done
+          '
+      - name: Upload rendered previews
         uses: actions/upload-artifact@v4
         with:
-          name: CodexMobile-visual-preview-linux
-          path: desktop/codex-mobile-rust/target/release/ui-preview
-          retention-days: 2
+          name: CodexMobile-visual-preview
+          path: preview/*.png
+          retention-days: 7
