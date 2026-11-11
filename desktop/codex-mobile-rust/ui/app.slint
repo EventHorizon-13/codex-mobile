@@ -6,7 +6,77 @@ export struct FileRow { name: string, path: string, directory: bool }
 export struct NeedRow { id: string, title: string, detail: string, thread-id: string, instance-id: string, approval-id: string, turn-id: string, item-id: string, decisions: string, question: bool }
 export struct InfoRow { title: string, detail: string }
 
-component ActionButton inherits Rectangle {
+component IconFolder inherits Path {
+    in property <color> tint: #676767;
+    width: 16px; height: 16px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z";
+}
+
+component IconPlus inherits Path {
+    in property <color> tint: #676767;
+    width: 17px; height: 17px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2.2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M12 4.5v15M4.5 12h15";
+}
+
+component IconRefresh inherits Path {
+    in property <color> tint: #676767;
+    width: 16px; height: 16px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M20 11a8 8 0 0 0-14.6-4.8M4 4v5h5M4 13a8 8 0 0 0 14.6 4.8M20 20v-5h-5";
+}
+
+component IconArchive inherits Path {
+    in property <color> tint: #676767;
+    width: 16px; height: 16px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M4 7h16M5 7v12h14V7M9 11h6";
+}
+
+component IconGit inherits Path {
+    in property <color> tint: #676767;
+    width: 17px; height: 17px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M6 3v11M6 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM6 10c0 2 12-1 12 4v2";
+}
+
+component IconGear inherits Path {
+    in property <color> tint: #676767;
+    width: 17px; height: 17px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M4 7h10M18 7h2M14 4v6M4 17h2M10 17h10M8 14v6";
+}
+
+component IconAlert inherits Path {
+    in property <color> tint: #e09a10;
+    width: 17px; height: 17px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 8v5M12 16.5v.1";
+}
+
+component IconClip inherits Path {
+    in property <color> tint: #676767;
+    width: 19px; height: 19px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2.1px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13";
+}
+
+component IconSend inherits Path {
+    in property <color> tint: #ffffff;
+    width: 18px; height: 18px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2.2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M12 19V5M5.5 11.5 12 5l6.5 6.5";
+}
+
+component IconChevron inherits Path {
+    in property <color> tint: #676767;
+    width: 13px; height: 13px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2.2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M9 5l7 7-7 7";
+}
+
+component SmallButton inherits Rectangle {
     in property <string> label;
     in property <bool> dark;
     in property <bool> prominent: false;
@@ -14,32 +84,15 @@ component ActionButton inherits Rectangle {
     callback clicked();
     height: 36px;
     border-radius: 12px;
-    border-width: prominent ? 0px : 1px;
-    border-color: dark ? #414141 : #dedede;
-    background: prominent ? (dark ? #f4f4f4 : #171717) : area.has-hover ? (dark ? #343434 : #ececec) : (dark ? #2b2b2b : #ffffff);
+    border-width: 1px;
+    border-color: prominent ? transparent : (danger ? (dark ? #5a3030 : #f0c9c9) : (dark ? #2b2b2b : #e3e3e3));
+    background: prominent ? (dark ? #f2f2f2 : #0d0d0d) : area.has-hover ? (dark ? #242424 : #f0f0f2) : (dark ? #191919 : #ffffff);
     Text {
         text: label;
-        color: prominent ? (dark ? #171717 : #ffffff) : danger ? #d44f4f : (dark ? #ececec : #252525);
-        font-size: 13px;
-        font-weight: 500;
+        color: prominent ? (dark ? #0d0d0d : #ffffff) : danger ? (dark ? #ff8888 : #df1c1c) : (dark ? #f2f2f2 : #0d0d0d);
+        font-size: 14px;
+        font-weight: 600;
         horizontal-alignment: center;
-        vertical-alignment: center;
-    }
-    area := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
-}
-
-component NavButton inherits Rectangle {
-    in property <string> label;
-    in property <bool> selected;
-    in property <bool> dark;
-    callback clicked();
-    height: 40px;
-    border-radius: 12px;
-    background: selected ? (dark ? #303030 : #eaeaea) : area.has-hover ? (dark ? #292929 : #efefef) : transparent;
-    Text {
-        text: label; x: 12px; width: parent.width - 24px;
-        color: selected ? (dark ? #f5f5f5 : #202020) : (dark ? #c5c5c5 : #555555);
-        font-size: 13px; font-weight: selected ? 600 : 450;
         vertical-alignment: center;
     }
     area := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
@@ -48,13 +101,13 @@ component NavButton inherits Rectangle {
 export component AppWindow inherits Window {
     title: "Codex Mobile";
     no-frame: true;
-    resize-border-width: 7px;
+    resize-border-width: 6px;
     preferred-width: 1180px;
     preferred-height: 760px;
     min-width: 880px;
     min-height: 570px;
     default-font-family: "Segoe UI";
-    background: root.dark ? #0d0d0d : #ffffff;
+    background: root.dark ? #121212 : #f8f9fa;
 
     in-out property <bool> dark: true;
     init => { Palette.color-scheme = root.dark ? ColorScheme.dark : ColorScheme.light; }
@@ -73,7 +126,7 @@ export component AppWindow inherits Window {
     in-out property <string> file-path: "";
     in-out property <string> search-query: "";
     in-out property <string> model: "";
-    in-out property <string> effort: "";
+    in-out property <string> effort: "max";
     in-out property <string> approval: "on-request";
     in-out property <string> sandbox: "workspace-write";
     in-out property <int> panel: 0;
@@ -113,14 +166,14 @@ export component AppWindow inherits Window {
     VerticalLayout {
         spacing: 0px;
         Rectangle {
-            height: 46px;
-            background: root.dark ? #171717 : #f8f9fa;
+            height: 40px;
+            background: root.dark ? #191919 : #ffffff;
             WindowMoveArea {
                 width: parent.width - 138px;
                 HorizontalLayout {
-                    padding-left: 17px;
-                    spacing: 10px;
-                    Text { text: "✦"; width: 21px; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; vertical-alignment: center; }
+                    padding-left: 14px;
+                    spacing: 8px;
+                    Text { text: "✦"; width: 18px; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 16px; vertical-alignment: center; }
                     Text { text: "Codex"; width: 42px; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 650; vertical-alignment: center; }
                     Text { text: "Mobile"; width: 45px; color: root.dark ? #9a9a9a : #676767; font-size: 12px; vertical-alignment: center; }
                 }
@@ -128,12 +181,11 @@ export component AppWindow inherits Window {
             HorizontalLayout {
                 x: parent.width - 138px;
                 width: 138px;
-                spacing: 0px;
-                Rectangle { width: 46px; background: min-area.has-hover ? (root.dark ? #292929 : #ebebeb) : transparent;
+                Rectangle { width: 46px; background: min-area.has-hover ? (root.dark ? #242424 : #f0f0f2) : transparent;
                     Text { text: "−"; color: root.dark ? #f2f2f2 : #333333; font-size: 17px; horizontal-alignment: center; vertical-alignment: center; }
                     min-area := TouchArea { mouse-cursor: pointer; clicked => { root.minimized = true; } }
                 }
-                Rectangle { width: 46px; background: max-area.has-hover ? (root.dark ? #292929 : #ebebeb) : transparent;
+                Rectangle { width: 46px; background: max-area.has-hover ? (root.dark ? #242424 : #f0f0f2) : transparent;
                     Text { text: root.maximized ? "❐" : "□"; color: root.dark ? #f2f2f2 : #333333; font-size: 16px; horizontal-alignment: center; vertical-alignment: center; }
                     max-area := TouchArea { mouse-cursor: pointer; clicked => { root.maximized = !root.maximized; } }
                 }
@@ -143,280 +195,417 @@ export component AppWindow inherits Window {
                 }
             }
         }
+
         HorizontalLayout {
             spacing: 0px;
             Rectangle {
-                width: 258px;
-                background: root.dark ? #171717 : #f8f9fa;
+                width: 280px;
+                background: root.dark ? #191919 : #ffffff;
                 VerticalLayout {
-                    padding-left: 11px; padding-right: 11px; padding-top: 14px; padding-bottom: 10px;
-                    spacing: 8px;
-                    NavButton { label: "＋   新对话"; dark: root.dark; clicked => { root.new-thread(); root.panel = 0; } }
-                    NavButton { label: "⌕   刷新会话"; dark: root.dark; clicked => { root.refresh(); } }
-                    Rectangle { height: 13px; background: transparent; }
-                    Text { text: "最近"; color: root.dark ? #8d8d8d : #777777; font-size: 12px; font-weight: 600; x: 12px; }
+                    spacing: 0px;
+                    Rectangle {
+                        height: 60px;
+                        HorizontalLayout {
+                            padding-left: 16px; padding-right: 12px;
+                            Text { text: "工作区与会话"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; font-weight: 650; vertical-alignment: center; horizontal-stretch: 1; }
+                        }
+                    }
+                    Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
+                    Rectangle {
+                        height: 44px; background: row-one.has-hover ? (root.dark ? #242424 : #f0f0f2) : transparent;
+                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 10px;
+                            IconPlus { tint: root.dark ? #d4d4d4 : #555555; cross-axis-self-alignment: center; }
+                            Text { text: "新对话"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
+                        }
+                        row-one := TouchArea { mouse-cursor: pointer; clicked => { root.new-thread(); root.panel = 0; } }
+                    }
+                    Rectangle {
+                        height: 40px; background: row-refresh.has-hover ? (root.dark ? #242424 : #f0f0f2) : transparent;
+                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 10px;
+                            IconRefresh { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
+                            Text { text: "刷新会话"; color: root.dark ? #9a9a9a : #676767; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
+                        }
+                        row-refresh := TouchArea { mouse-cursor: pointer; clicked => { root.refresh(); } }
+                    }
+                    Rectangle {
+                        height: 38px;
+                        HorizontalLayout { padding-left: 14px; padding-right: 12px; spacing: 10px;
+                            IconArchive { tint: root.dark ? #777777 : #888888; cross-axis-self-alignment: center; }
+                            Text { text: "已归档"; color: root.dark ? #777777 : #888888; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
+                            IconChevron { tint: root.dark ? #666666 : #999999; cross-axis-self-alignment: center; }
+                        }
+                    }
+                    Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
+                    Rectangle {
+                        height: 42px;
+                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 9px;
+                            IconFolder { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
+                            Text { text: "Codex Mobile"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 650; vertical-alignment: center; horizontal-stretch: 1; }
+                            Rectangle { width: 24px; height: 24px; border-radius: 8px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: root.dark ? #191919 : #ffffff;
+                                IconPlus { x: 4px; y: 4px; tint: root.dark ? #9a9a9a : #676767; }
+                                plus-area := TouchArea { mouse-cursor: pointer; clicked => { root.new-thread(); root.panel = 0; } }
+                            }
+                        }
+                    }
                     ListView {
                         vertical-stretch: 1;
                         horizontal-scrollbar-policy: always-off;
                         for item[i] in root.threads: Rectangle {
-                            height: 43px;
-                            border-radius: 12px;
-                            background: root.selected-thread == i ? (root.dark ? #292929 : #e9eaeb) : thread-area.has-hover ? (root.dark ? #242424 : #eeeeef) : transparent;
+                            height: 56px;
+                            background: transparent;
                             Rectangle {
-                                x: 10px; y: (parent.height - 7px) / 2; width: 7px; height: 7px; border-radius: 4px;
-                                visible: item.status != "";
-                                background: item.status == "error" ? #df1c1c : item.status == "needs-you" || item.status == "needs_you" ? #e09a10 : item.status == "running" ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #666666 : #aaaaaa);
+                                x: 8px; width: parent.width - 16px; height: 54px;
+                                border-radius: 12px;
+                                border-width: root.selected-thread == i ? 1px : 0px;
+                                border-color: root.dark ? #2b2b2b : #e3e3e3;
+                                background: root.selected-thread == i ? (root.dark ? #121212 : #f8f9fa) : thread-area.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
+                                Rectangle {
+                                    x: 11px; y: (parent.height - 7px) / 2; width: 7px; height: 7px; border-radius: 4px;
+                                    visible: item.status != "";
+                                    background: item.status == "error" ? #df1c1c : item.status == "needs-you" || item.status == "needs_you" ? #e09a10 : item.status == "running" ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #666666 : #aaaaaa);
+                                }
+                                Text {
+                                    x: 24px; width: parent.width - 34px;
+                                    text: item.title;
+                                    color: root.selected-thread == i ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #d0d0d0 : #303030);
+                                    font-size: 14px; font-weight: root.selected-thread == i ? 600 : 500;
+                                    overflow: elide; wrap: no-wrap; vertical-alignment: center;
+                                }
+                                thread-area := TouchArea { mouse-cursor: pointer; clicked => { root.open-thread(i); } }
                             }
-                            Text { x: 24px; width: parent.width - 36px; text: item.title; overflow: elide; color: root.dark ? #e4e4e4 : #242424; font-size: 13px; font-weight: root.selected-thread == i ? 600 : 450; vertical-alignment: center; }
-                            thread-area := TouchArea { mouse-cursor: pointer; clicked => { root.open-thread(i); } }
                         }
                     }
-                    Rectangle { height: 1px; background: root.dark ? #292929 : #e7e7e7; }
-                    NavButton { label: "▤   工作区文件"; dark: root.dark; selected: root.panel == 1; clicked => { root.panel = 1; root.load-files(); } }
-                    NavButton { label: "⌁   Git 变更"; dark: root.dark; selected: root.panel == 2; clicked => { root.panel = 2; root.load-git(); } }
-                    NavButton { label: "◉   需要你"; dark: root.dark; selected: root.panel == 3; clicked => { root.panel = 3; root.open-info("needs"); } }
-                    NavButton { label: "⚙   设置与状态"; dark: root.dark; selected: root.panel == 4; clicked => { root.panel = 4; root.open-info("settings"); } }
-                    Rectangle { height: 4px; background: transparent; }
-                    Text { text: root.status; color: root.dark ? #9a9a9a : #676767; font-size: 11px; overflow: elide; x: 12px; }
-                    Text { text: "Powered by Slint"; color: root.dark ? #666666 : #999999; font-size: 10px; x: 12px; }
+                    Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
+                    Rectangle {
+                        height: 46px; background: row-files.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
+                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 9px;
+                            IconFolder { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
+                            Text { text: "工作区文件"; color: root.dark ? #d0d0d0 : #303030; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
+                        }
+                        row-files := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 1; root.load-files(); } }
+                    }
+                    Rectangle {
+                        height: 46px; background: row-git.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
+                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 9px;
+                            IconGit { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
+                            Text { text: "Git 变更"; color: root.dark ? #d0d0d0 : #303030; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
+                        }
+                        row-git := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 2; root.load-git(); } }
+                    }
+                    Rectangle {
+                        height: 46px; background: row-needs.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
+                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 9px;
+                            IconAlert { tint: root.dark ? #e09a10 : #9a5f22; cross-axis-self-alignment: center; }
+                            Text { text: "需要你"; color: root.dark ? #d0d0d0 : #303030; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
+                        }
+                        row-needs := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 3; root.open-info("needs"); } }
+                    }
+                    Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
+                    Rectangle {
+                        height: 52px; background: row-settings.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
+                        HorizontalLayout { padding-left: 14px; padding-right: 12px; spacing: 9px;
+                            IconGear { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
+                            Text { text: "设置与状态"; color: root.dark ? #d0d0d0 : #303030; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
+                            IconChevron { tint: root.dark ? #666666 : #999999; cross-axis-self-alignment: center; }
+                        }
+                        row-settings := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 4; root.open-info("settings"); } }
+                    }
+                    Rectangle { height: 34px; background: root.dark ? #191919 : #ffffff;
+                        Text { x: 14px; y: 5px; width: parent.width - 28px; text: root.status; color: root.dark ? #777777 : #888888; font-size: 11px; overflow: elide; wrap: no-wrap; }
+                        Text { x: 14px; y: 19px; text: "Powered by Slint"; color: root.dark ? #555555 : #aaaaaa; font-size: 9px; }
+                    }
                 }
             }
-            Rectangle { width: 1px; background: root.dark ? #252525 : #e9e9e9; }
+            Rectangle { width: 1px; background: root.dark ? #242424 : #f0f0f2; }
             Rectangle {
-                background: root.dark ? #0d0d0d : #ffffff;
+                background: root.dark ? #121212 : #f8f9fa;
                 VerticalLayout {
                     spacing: 0px;
                     Rectangle {
-                        height: 62px;
-                        background: root.dark ? #0d0d0d : #ffffff;
+                        height: 56px;
+                        background: root.dark ? #191919 : #ffffff;
                         HorizontalLayout {
-                            padding-left: 28px; padding-right: 26px; spacing: 9px;
-                            Text { text: root.panel == 0 ? (root.title-text == "新会话" ? "Codex Mobile" : root.title-text) : root.panel == 1 ? "工作区" : root.panel == 2 ? "Git 变更" : root.panel == 3 ? "需要你" : root.panel == 4 ? "设置与状态" : "会话操作"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 16px; font-weight: 600; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
-                            if root.panel == 0 && root.connected: ActionButton { label: "会话操作  ···"; dark: root.dark; width: 116px; clicked => { root.panel = 5; } }
-                            if root.panel == 0 && root.busy: ActionButton { label: "停止"; dark: root.dark; danger: true; width: 58px; clicked => { root.stop-turn(); } }
+                            padding-left: 16px; padding-right: 14px; spacing: 8px;
+                            Rectangle {
+                                height: 34px; border-radius: 17px; border-width: 1px; border-color: root.dark ? #242424 : #f0f0f2; background: root.dark ? #121212 : #f8f9fa;
+                                horizontal-stretch: 1; max-width: 520px;
+                                HorizontalLayout { padding-left: 12px; padding-right: 12px; spacing: 8px;
+                                    IconFolder { tint: root.dark ? #f2f2f2 : #0d0d0d; cross-axis-self-alignment: center; }
+                                    Text { text: root.panel == 0 ? (root.title-text == "" ? "新会话" : root.title-text) : root.panel == 1 ? "工作区" : root.panel == 2 ? "Git 变更" : root.panel == 3 ? "需要你" : root.panel == 4 ? "设置与状态" : "会话操作"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 600; overflow: elide; wrap: no-wrap; vertical-alignment: center; horizontal-stretch: 1; }
+                                    IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
+                                }
+                            }
+                            Rectangle { width: 36px; height: 36px; border-radius: 12px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: new-area.has-hover ? (root.dark ? #242424 : #f0f0f2) : (root.dark ? #191919 : #ffffff);
+                                IconPlus { x: 9.5px; y: 9.5px; tint: root.dark ? #f2f2f2 : #0d0d0d; }
+                                new-area := TouchArea { mouse-cursor: pointer; clicked => { root.new-thread(); root.panel = 0; } }
+                            }
+                            if root.busy: SmallButton { label: "停止"; dark: root.dark; danger: true; width: 64px; clicked => { root.stop-turn(); } }
+                            if root.panel == 0 && root.connected: SmallButton { label: "···"; dark: root.dark; width: 42px; clicked => { root.panel = 5; } }
                         }
                     }
+                    Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
+
                     if root.panel == 0 && !root.connected: Rectangle {
                         vertical-stretch: 1;
-                        background: transparent;
                         Rectangle {
-                            width: min(parent.width - 80px, 420px);
-                            height: 320px;
-                            x: (parent.width - self.width) / 2;
-                            y: (parent.height - self.height) / 2 - 28px;
-                            background: transparent;
-                            VerticalLayout {
-                                spacing: 13px;
-                                Text { text: "连接 Codex"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 29px; font-weight: 500; horizontal-alignment: center; }
-                                Text { text: "连接你的服务器，继续工作。"; color: root.dark ? #9a9a9a : #676767; font-size: 14px; horizontal-alignment: center; }
-                                Rectangle { height: 20px; background: transparent; }
-                                Text { text: "服务器地址"; color: root.dark ? #bcbcbc : #555555; font-size: 12px; }
+                            width: min(parent.width - 48px, 380px); height: 354px;
+                            x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
+                            background: root.dark ? #191919 : #ffffff; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; border-radius: 16px;
+                            VerticalLayout { padding: 22px; spacing: 12px;
+                                Text { text: "连接 Codex"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 26px; font-weight: 600; horizontal-alignment: center; }
+                                Text { text: "使用现有设备凭证继续工作"; color: root.dark ? #9a9a9a : #676767; font-size: 13px; horizontal-alignment: center; }
+                                Rectangle { height: 8px; background: transparent; }
+                                Text { text: "服务器地址"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; }
                                 LineEdit { text <=> root.server-url; placeholder-text: "https://服务器地址"; }
-                                Text { text: "设备口令"; color: root.dark ? #bcbcbc : #555555; font-size: 12px; }
+                                Text { text: "访问口令"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; }
                                 token-input := LineEdit { input-type: password; placeholder-text: "首次连接时输入"; }
-                                CheckBox { text: "在此设备保存登录凭证"; checked <=> root.remember-device; }
-                                ActionButton { label: "继续"; dark: root.dark; prominent: true; clicked => { root.connect(root.server-url, token-input.text, root.remember-device); token-input.text = ""; } }
+                                CheckBox { text: "保存此设备登录"; checked <=> root.remember-device; }
+                                SmallButton { label: "连接"; dark: root.dark; prominent: true; clicked => { root.connect(root.server-url, token-input.text, root.remember-device); token-input.text = ""; } }
                             }
                         }
                     }
+
                     if root.panel == 0 && root.connected: VerticalLayout {
                         spacing: 0px;
                         if root.messages.length == 0: Rectangle {
                             vertical-stretch: 1;
-                            background: transparent;
                             Rectangle {
-                                width: min(parent.width - 80px, 520px);
-                                height: 164px;
-                                x: (parent.width - self.width) / 2;
-                                y: (parent.height - self.height) / 2 - 12px;
+                                width: min(parent.width - 48px, 720px); height: 292px;
+                                x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2 - 12px;
                                 background: transparent;
-                                VerticalLayout {
-                                    spacing: 18px;
-                                    Text { text: "这轮改什么？"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 30px; font-weight: 500; horizontal-alignment: center; }
-                                    HorizontalLayout {
-                                        spacing: 8px;
-                                        ActionButton { label: "工作区"; dark: root.dark; horizontal-stretch: 1; clicked => { root.panel = 1; root.load-files(); } }
-                                        ActionButton { label: "Git 变更"; dark: root.dark; horizontal-stretch: 1; clicked => { root.panel = 2; root.load-git(); } }
-                                        ActionButton { label: "待审批"; dark: root.dark; horizontal-stretch: 1; clicked => { root.open-info("needs"); root.panel = 3; } }
+                                VerticalLayout { spacing: 0px;
+                                    Text { text: "这轮改什么？"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 28px; font-weight: 600; horizontal-alignment: center; }
+                                    Rectangle { height: 26px; background: transparent; }
+                                    Rectangle {
+                                        height: 50px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; border-radius: 0px; background: row-suggest-one.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
+                                            Text { text: "↻"; color: root.dark ? #9a9a9a : #676767; font-size: 16px; vertical-alignment: center; }
+                                            Text { text: "继续最近会话"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
+                                            IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
+                                        }
+                                        row-suggest-one := TouchArea { mouse-cursor: pointer; clicked => { if root.threads.length > 0 { root.open-thread(0); } else { root.new-thread(); } root.panel = 0; } }
+                                    }
+                                    Rectangle {
+                                        height: 50px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: row-suggest-two.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
+                                            IconFolder { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
+                                            Text { text: "打开工作区文件"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
+                                            IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
+                                        }
+                                        row-suggest-two := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 1; root.load-files(); } }
+                                    }
+                                    Rectangle {
+                                        height: 50px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: row-suggest-three.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
+                                            IconGit { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
+                                            Text { text: "查看 Git 变更"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
+                                            IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
+                                        }
+                                        row-suggest-three := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 2; root.load-git(); } }
+                                    }
+                                    Rectangle {
+                                        height: 50px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: row-suggest-four.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
+                                        HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
+                                            IconAlert { tint: root.dark ? #e09a10 : #9a5f22; cross-axis-self-alignment: center; }
+                                            Text { text: "处理待审批"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
+                                            IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
+                                        }
+                                        row-suggest-four := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 3; root.open-info("needs"); } }
                                     }
                                 }
                             }
                         }
-                        if root.messages.length > 0: ListView {
+                        if root.messages.length > 0: Rectangle {
                             vertical-stretch: 1;
-                            horizontal-scrollbar-policy: always-off;
-                            for msg in root.messages: Rectangle {
-                                height: message-surface.height + 22px;
-                                background: transparent;
-                                message-surface := Rectangle {
-                                    width: msg.role == "你" ? min(parent.width - 80px, 620px) : min(parent.width - 80px, 830px);
-                                    height: message-body.preferred-height + 38px;
-                                    x: msg.role == "你" ? parent.width - self.width - max(40px, (parent.width - 860px) / 2) : max(40px, (parent.width - 860px) / 2);
-                                    y: 10px;
-                                    border-radius: msg.role == "你" ? 18px : 0px;
-                                    background: msg.role == "你" ? (root.dark ? #32363f : #dde1e8) : transparent;
-                                    if msg.role == "你": Rectangle { x: 12px; y: 12px; width: 2px; height: parent.height - 24px; background: root.dark ? #e6e9f0 : #1c2430; }
-                                    if msg.role != "你": Rectangle { x: 0px; y: 11px; width: 27px; height: 27px; border-radius: 14px; background: root.dark ? #262626 : #f1f1f1;
-                                        Text { text: msg.tone == 1 ? "⌘" : "✦"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 15px; horizontal-alignment: center; vertical-alignment: center; }
+                            background: transparent;
+                            ListView {
+                                width: min(parent.width - 48px, 720px); height: parent.height;
+                                x: (parent.width - self.width) / 2;
+                                horizontal-scrollbar-policy: always-off;
+                                for msg in root.messages: Rectangle {
+                                    width: parent.width;
+                                    height: msg.role == "你" ? body-user.preferred-height + 22px : msg.role == "活动" ? body-activity.preferred-height + 14px : body-other.preferred-height + 16px;
+                                    background: transparent;
+                                    if msg.role == "你": Rectangle {
+                                        width: min(parent.width, 456px); height: parent.height; x: parent.width - self.width;
+                                        background: root.dark ? #32363f : #dde1e8; border-radius: 12px;
                                     }
-                                    message-body := Text {
-                                        x: msg.role == "你" ? 18px : 42px;
-                                        y: 18px;
-                                        width: parent.width - (msg.role == "你" ? 36px : 48px);
+                                    if msg.role == "你": Rectangle { x: parent.width - min(parent.width, 456px); y: 8px; width: 2px; height: parent.height - 16px; background: root.dark ? #e6e9f0 : #1c2430; }
+                                    if msg.role == "活动": Rectangle { x: 1px; y: 9px; width: 7px; height: 7px; border-radius: 4px; background: msg.tone == 2 ? #df1c1c : (root.dark ? #777777 : #888888); }
+                                    if msg.role == "活动": body-activity := Text {
+                                        x: 18px; y: 3px; width: parent.width - 18px;
+                                        text: msg.body; color: msg.tone == 2 ? (root.dark ? #ff8888 : #df1c1c) : (root.dark ? #9a9a9a : #676767);
+                                        font-size: 13px; wrap: word-wrap;
+                                    }
+                                    if msg.role == "你": body-user := Text {
+                                        x: parent.width - min(parent.width, 456px) + 14px; y: 10px; width: min(parent.width, 456px) - 28px;
+                                        text: msg.body; color: root.dark ? #e6e9f0 : #1c2430; font-size: 16px; wrap: word-wrap;
+                                    }
+                                    if msg.role != "你" && msg.role != "活动": body-other := Text {
+                                        x: 0px; y: 5px; width: parent.width;
                                         text: msg.body;
-                                        color: msg.tone == 2 ? (root.dark ? #ff8888 : #c43b3b) : msg.role == "你" ? (root.dark ? #e6e9f0 : #1c2430) : (root.dark ? #f2f2f2 : #0d0d0d);
-                                        font-size: 15px;
+                                        color: msg.role == "错误" || msg.tone == 2 ? (root.dark ? #ff8888 : #bf2020) : msg.role == "系统" ? (root.dark ? #9a9a9a : #676767) : (root.dark ? #f2f2f2 : #0d0d0d);
+                                        font-size: msg.role == "系统" ? 13px : 16px;
+                                        horizontal-alignment: msg.role == "系统" ? center : left;
                                         wrap: word-wrap;
                                     }
                                 }
                             }
                         }
                         Rectangle {
-                            height: 158px;
-                            background: root.dark ? #0d0d0d : #ffffff;
-                            composer := Rectangle {
-                                width: min(parent.width - 72px, 840px);
-                                height: 116px;
-                                x: (parent.width - self.width) / 2;
-                                y: 12px;
-                                border-radius: 20px;
-                                border-width: 1px;
-                                border-color: root.dark ? #2b2b2b : #e3e3e3;
-                                background: root.dark ? #191919 : #f8f9fa;
-                                clip: true;
-                                Text { x: 20px; y: 17px; text: "发消息或跟进"; color: root.dark ? #9a9a9a : #777777; font-size: 15px; visible: root.draft == ""; }
-                                TextInput { x: 20px; y: 15px; width: parent.width - 40px; height: 57px; text <=> root.draft; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 15px; single-line: false; wrap: word-wrap; }
-                                HorizontalLayout { x: 12px; y: 74px; width: parent.width - 24px; height: 34px; spacing: 7px;
-                                    ActionButton { label: "+"; dark: root.dark; width: 36px; clicked => { root.attach-image(); } }
-                                    if root.attachment-label != "": ActionButton { label: root.attachment-label + " ×"; dark: root.dark; width: 142px; clicked => { root.clear-attachment(); } }
-                                    Text { text: root.model == "" ? "模型" : root.model; color: root.dark ? #9a9a9a : #676767; font-size: 12px; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
-                                    Rectangle { width: 34px; height: 34px; border-radius: 17px; background: root.dark ? #f2f2f2 : #0d0d0d;
-                                        Text { text: "↑"; color: root.dark ? #0d0d0d : #ffffff; font-size: 19px; font-weight: 650; horizontal-alignment: center; vertical-alignment: center; }
-                                        send-area := TouchArea { mouse-cursor: pointer; clicked => { root.send-message(root.draft); } }
+                            height: 138px;
+                            background: transparent;
+                            Rectangle {
+                                width: min(parent.width - 48px, 720px); height: 118px;
+                                x: (parent.width - self.width) / 2; y: 4px;
+                                border-radius: 20px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3;
+                                background: root.dark ? #191919 : #ffffff; clip: true;
+                                Text { x: 16px; y: 12px; text: "描述要改的代码"; color: root.dark ? #777777 : #999999; font-size: 18px; visible: root.draft == ""; }
+                                TextInput { x: 16px; y: 9px; width: parent.width - 32px; height: 58px; text <=> root.draft; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; single-line: false; wrap: word-wrap; }
+                                Rectangle { x: 10px; y: 73px; height: 34px; border-radius: 17px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: root.dark ? #121212 : #f8f9fa;
+                                    HorizontalLayout { padding-left: 12px; padding-right: 12px; spacing: 6px;
+                                        Text { text: root.model == "" ? "模型" : root.model; color: root.dark ? #9a9a9a : #676767; font-size: 13px; font-weight: 600; overflow: elide; wrap: no-wrap; max-width: 190px; vertical-alignment: center; }
+                                        Text { text: "·"; color: root.dark ? #666666 : #aaaaaa; font-size: 13px; vertical-alignment: center; }
+                                        Text { text: root.approval; color: root.dark ? #9a9a9a : #676767; font-size: 13px; font-weight: 600; overflow: elide; wrap: no-wrap; max-width: 110px; vertical-alignment: center; }
+                                        Text { text: "·"; color: root.dark ? #666666 : #aaaaaa; font-size: 13px; vertical-alignment: center; }
+                                        Text { text: root.effort; color: root.dark ? #9a9a9a : #676767; font-size: 13px; font-weight: 600; vertical-alignment: center; }
                                     }
+                                    settings-chip := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 4; root.open-info("settings"); } }
                                 }
+                                Rectangle { x: parent.width - 82px; y: 72px; width: 34px; height: 34px; border-radius: 12px; background: root.dark ? #191919 : #ffffff;
+                                    IconClip { x: 7.5px; y: 7.5px; tint: root.dark ? #9a9a9a : #676767; }
+                                    clip-area := TouchArea { mouse-cursor: pointer; clicked => { root.attach-image(); } }
+                                }
+                                Rectangle { x: parent.width - 44px; y: 72px; width: 34px; height: 34px; border-radius: 10px; background: root.dark ? #f2f2f2 : #0d0d0d;
+                                    if root.busy: Rectangle { x: 10px; y: 10px; width: 14px; height: 14px; border-radius: 3px; background: root.dark ? #0d0d0d : #ffffff; }
+                                    if !root.busy: IconSend { x: 8px; y: 8px; tint: root.dark ? #0d0d0d : #ffffff; }
+                                    send-area := TouchArea { mouse-cursor: pointer; clicked => { if root.busy { root.stop-turn(); } else { root.send-message(root.draft); } } }
+                                }
+                                if root.attachment-label != "": Text { x: 112px; y: 78px; width: min(parent.width - 210px, 300px); text: root.attachment-label + " ×"; color: root.dark ? #e6e9f0 : #1c2430; font-size: 12px; overflow: elide; wrap: no-wrap; }
                             }
-                            Text { y: 136px; text: root.cwd; color: root.dark ? #777777 : #999999; font-size: 11px; width: parent.width; horizontal-alignment: center; overflow: elide; }
                         }
                     }
+
                     if root.panel == 1: VerticalLayout {
-                        padding: 18px; spacing: 12px;
+                        padding: 20px; spacing: 12px;
                         HorizontalLayout { spacing: 8px;
-                            ActionButton { label: "↑ 上级"; dark: root.dark; width: 76px; clicked => { root.file-up(); } }
+                            SmallButton { label: "上级"; dark: root.dark; width: 74px; clicked => { root.file-up(); } }
                             LineEdit { text <=> root.search-query; placeholder-text: "搜索文件"; horizontal-stretch: 1; accepted(value) => { root.file-search(value); } }
-                            ActionButton { label: "搜索"; dark: root.dark; width: 68px; clicked => { root.file-search(root.search-query); } }
+                            SmallButton { label: "搜索"; dark: root.dark; width: 68px; clicked => { root.file-search(root.search-query); } }
                         }
-                        Text { text: root.file-path; color: root.dark ? #9a9a9a : #676767; font-size: 11px; overflow: elide; }
+                        Text { text: root.file-path; color: root.dark ? #9a9a9a : #676767; font-size: 12px; overflow: elide; wrap: no-wrap; }
                         HorizontalLayout { spacing: 12px;
                             ListView { width: 280px; horizontal-scrollbar-policy: always-off;
-                                for file[i] in root.files: Rectangle { height: 40px; background: file-area.has-hover ? (root.dark ? #242424 : #eeeeee) : transparent;
-                                    Text { x: 10px; width: parent.width - 20px; text: (file.directory ? "▸  " : "   ") + file.name; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 12px; overflow: elide; vertical-alignment: center; }
+                                for file[i] in root.files: Rectangle { height: 40px; border-radius: 10px; background: file-area.has-hover ? (root.dark ? #202020 : #f0f0f2) : transparent;
+                                    Text { x: 12px; width: parent.width - 24px; text: (file.directory ? "▸  " : "   ") + file.name; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; overflow: elide; wrap: no-wrap; vertical-alignment: center; }
                                     file-area := TouchArea { mouse-cursor: pointer; clicked => { root.file-open(i); } }
                                 }
                             }
                             TextEdit { text: root.preview; read-only: true; horizontal-stretch: 1; }
                         }
                     }
+
                     if root.panel == 2: VerticalLayout {
-                        padding: 18px; spacing: 12px;
-                        ActionButton { label: "刷新 Git 变更"; dark: root.dark; width: 140px; clicked => { root.load-git(); } }
+                        padding: 20px; spacing: 12px;
+                        SmallButton { label: "刷新 Git 变更"; dark: root.dark; width: 140px; clicked => { root.load-git(); } }
                         ListView { vertical-stretch: 1; horizontal-scrollbar-policy: always-off;
-                            for item in root.info: Rectangle { height: 46px; background: git-area.has-hover ? (root.dark ? #242424 : #eeeeee) : transparent;
-                                Text { x: 10px; y: 6px; text: item.title; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 12px; }
-                                Text { x: 10px; y: 25px; text: item.detail; color: root.dark ? #9a9a9a : #676767; font-size: 11px; }
+                            for item in root.info: Rectangle { height: 48px; border-radius: 10px; background: git-area.has-hover ? (root.dark ? #202020 : #f0f0f2) : transparent;
+                                Text { x: 12px; y: 6px; width: parent.width - 24px; text: item.title; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; overflow: elide; wrap: no-wrap; }
+                                Text { x: 12px; y: 25px; width: parent.width - 24px; text: item.detail; color: root.dark ? #9a9a9a : #676767; font-size: 12px; overflow: elide; wrap: no-wrap; }
                                 git-area := TouchArea { mouse-cursor: pointer; clicked => { root.open-info("git:" + item.title); } }
                             }
                         }
-                        TextEdit { text: root.preview; read-only: true; height: 240px; }
+                        TextEdit { text: root.preview; read-only: true; height: 220px; }
                     }
+
                     if root.panel == 3: VerticalLayout {
-                        padding: 18px; spacing: 12px;
-                        Text { text: "待处理请求"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 17px; font-weight: 650; }
+                        padding: 20px; spacing: 12px;
+                        Text { text: "需要你"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; font-weight: 650; }
                         ListView { vertical-stretch: 1; horizontal-scrollbar-policy: always-off;
-                            for need[i] in root.needs: Rectangle { height: need.question ? 178px : 124px; background: root.dark ? #191919 : #ffffff; border-color: root.dark ? #2b2b2b : #e3e3e3; border-width: 1px; border-radius: 6px;
-                                Text { x: 14px; y: 12px; width: parent.width - 28px; text: need.title; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 650; overflow: elide; }
-                                Text { x: 14px; y: 38px; width: parent.width - 28px; text: need.detail; color: root.dark ? #9a9a9a : #676767; font-size: 11px; overflow: elide; }
+                            for need[i] in root.needs: Rectangle { height: need.question ? 178px : 124px; background: root.dark ? #191919 : #ffffff; border-color: root.dark ? #2b2b2b : #e3e3e3; border-width: 1px; border-radius: 12px;
+                                Text { x: 14px; y: 12px; width: parent.width - 28px; text: need.title; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 650; overflow: elide; wrap: no-wrap; }
+                                Text { x: 14px; y: 38px; width: parent.width - 28px; text: need.detail; color: root.dark ? #9a9a9a : #676767; font-size: 12px; overflow: elide; wrap: no-wrap; }
                                 if !need.question: HorizontalLayout { x: 14px; y: 74px; height: 34px; spacing: 8px;
-                                    ActionButton { label: "批准"; dark: root.dark; prominent: true; width: 76px; clicked => { root.need-decision(i, "accept"); } }
-                                    ActionButton { label: "本会话批准"; dark: root.dark; width: 108px; clicked => { root.need-decision(i, "acceptForSession"); } }
-                                    ActionButton { label: "拒绝"; dark: root.dark; danger: true; width: 76px; clicked => { root.need-decision(i, "decline"); } }
+                                    SmallButton { label: "批准"; dark: root.dark; prominent: true; width: 76px; clicked => { root.need-decision(i, "accept"); } }
+                                    SmallButton { label: "本会话批准"; dark: root.dark; width: 108px; clicked => { root.need-decision(i, "acceptForSession"); } }
+                                    SmallButton { label: "拒绝"; dark: root.dark; danger: true; width: 76px; clicked => { root.need-decision(i, "decline"); } }
                                 }
                                 if need.question: VerticalLayout { x: 14px; y: 66px; width: parent.width - 28px; height: 98px; spacing: 8px;
                                     answer := LineEdit { placeholder-text: "输入答案；多个问题用分号分隔"; }
                                     HorizontalLayout { spacing: 8px;
-                                        ActionButton { label: "提交回答"; dark: root.dark; prominent: true; width: 88px; clicked => { root.need-answer(i, answer.text); } }
-                                        ActionButton { label: "跳过"; dark: root.dark; width: 70px; clicked => { root.need-answer(i, ""); } }
+                                        SmallButton { label: "提交回答"; dark: root.dark; prominent: true; width: 88px; clicked => { root.need-answer(i, answer.text); } }
+                                        SmallButton { label: "跳过"; dark: root.dark; width: 70px; clicked => { root.need-answer(i, ""); } }
                                     }
                                 }
                             }
                         }
                     }
+
                     if root.panel == 4: VerticalLayout {
                         padding: 20px; spacing: 12px;
-                        Text { text: "偏好设置"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; font-weight: 650; }
-                        HorizontalLayout { spacing: 12px;
-                            Text { text: "外观"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
-                            ActionButton { label: "跟随系统"; dark: root.dark; prominent: root.theme-mode == 0; width: 100px; clicked => { root.set-theme(0); } }
-                            ActionButton { label: "深色"; dark: root.dark; prominent: root.theme-mode == 1; width: 70px; clicked => { root.set-theme(1); } }
-                            ActionButton { label: "浅色"; dark: root.dark; prominent: root.theme-mode == 2; width: 70px; clicked => { root.set-theme(2); } }
+                        Text { text: "设置与状态"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; font-weight: 650; }
+                        HorizontalLayout { spacing: 10px;
+                            Text { text: "外观"; color: root.dark ? #9a9a9a : #676767; width: 80px; vertical-alignment: center; }
+                            SmallButton { label: "跟随系统"; dark: root.dark; prominent: root.theme-mode == 0; width: 100px; clicked => { root.set-theme(0); } }
+                            SmallButton { label: "深色"; dark: root.dark; prominent: root.theme-mode == 1; width: 70px; clicked => { root.set-theme(1); } }
+                            SmallButton { label: "浅色"; dark: root.dark; prominent: root.theme-mode == 2; width: 70px; clicked => { root.set-theme(2); } }
                         }
                         HorizontalLayout { spacing: 8px;
-                            Text { text: "设备"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
-                            if root.connected: ActionButton { label: "断开连接"; dark: root.dark; width: 96px; clicked => { root.disconnect(); } }
-                            ActionButton { label: "忘记登录"; dark: root.dark; danger: true; width: 96px; clicked => { root.forget-device(); } }
+                            Text { text: "设备"; color: root.dark ? #9a9a9a : #676767; width: 80px; vertical-alignment: center; }
+                            if root.connected: SmallButton { label: "断开连接"; dark: root.dark; width: 96px; clicked => { root.disconnect(); } }
+                            SmallButton { label: "忘记登录"; dark: root.dark; danger: true; width: 96px; clicked => { root.forget-device(); } }
                         }
                         Rectangle { height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
-                        Text { text: "本轮模型与权限"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 16px; font-weight: 650; }
-                        HorizontalLayout { spacing: 12px;
-                            Text { text: "模型"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
+                        HorizontalLayout { spacing: 10px;
+                            Text { text: "模型"; color: root.dark ? #9a9a9a : #676767; width: 80px; vertical-alignment: center; }
                             ComboBox { model: root.models; current-value: root.model; horizontal-stretch: 1; selected(value) => { root.set-model(value); } }
                         }
-                        HorizontalLayout { spacing: 12px;
-                            Text { text: "推理"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
+                        HorizontalLayout { spacing: 10px;
+                            Text { text: "推理"; color: root.dark ? #9a9a9a : #676767; width: 80px; vertical-alignment: center; }
                             ComboBox { model: ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]; current-value: root.effort; horizontal-stretch: 1; selected(value) => { root.set-effort(value); } }
                         }
-                        HorizontalLayout { spacing: 12px;
-                            Text { text: "审批"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
+                        HorizontalLayout { spacing: 10px;
+                            Text { text: "审批"; color: root.dark ? #9a9a9a : #676767; width: 80px; vertical-alignment: center; }
                             ComboBox { model: ["untrusted", "on-request", "never"]; current-value: root.approval; horizontal-stretch: 1; selected(value) => { root.set-approval(value); } }
                         }
-                        HorizontalLayout { spacing: 12px;
-                            Text { text: "沙箱"; color: root.dark ? #9a9a9a : #676767; vertical-alignment: center; width: 80px; }
+                        HorizontalLayout { spacing: 10px;
+                            Text { text: "沙箱"; color: root.dark ? #9a9a9a : #676767; width: 80px; vertical-alignment: center; }
                             ComboBox { model: ["read-only", "workspace-write", "danger-full-access"]; current-value: root.sandbox; horizontal-stretch: 1; selected(value) => { root.set-sandbox(value); } }
                         }
                         Rectangle { height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
-                        Text { text: "控制台"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 16px; font-weight: 650; }
                         HorizontalLayout { spacing: 8px;
-                            ActionButton { label: "账号"; dark: root.dark; width: 80px; clicked => { root.open-info("account"); } }
-                            ActionButton { label: "健康"; dark: root.dark; width: 80px; clicked => { root.open-info("health"); } }
-                            ActionButton { label: "MCP"; dark: root.dark; width: 80px; clicked => { root.open-info("mcp"); } }
-                            ActionButton { label: "Skills"; dark: root.dark; width: 80px; clicked => { root.open-info("skills"); } }
-                            ActionButton { label: "设备"; dark: root.dark; width: 80px; clicked => { root.open-info("devices"); } }
+                            SmallButton { label: "账号"; dark: root.dark; width: 76px; clicked => { root.open-info("account"); } }
+                            SmallButton { label: "诊断"; dark: root.dark; width: 76px; clicked => { root.open-info("health"); } }
+                            SmallButton { label: "MCP"; dark: root.dark; width: 76px; clicked => { root.open-info("mcp"); } }
+                            SmallButton { label: "技能"; dark: root.dark; width: 76px; clicked => { root.open-info("skills"); } }
+                            SmallButton { label: "设备"; dark: root.dark; width: 76px; clicked => { root.open-info("devices"); } }
                         }
                         ListView { vertical-stretch: 1; horizontal-scrollbar-policy: always-off;
-                            for item in root.info: Rectangle { height: 54px; background: transparent;
-                                Text { x: 0px; y: 4px; text: item.title; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 12px; font-weight: 600; }
-                                Text { x: 0px; y: 25px; width: parent.width; text: item.detail; overflow: elide; color: root.dark ? #9a9a9a : #676767; font-size: 11px; }
+                            for item in root.info: Rectangle { height: 56px; background: transparent;
+                                Text { x: 2px; y: 5px; width: parent.width - 4px; text: item.title; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 600; overflow: elide; wrap: no-wrap; }
+                                Text { x: 2px; y: 26px; width: parent.width - 4px; text: item.detail; color: root.dark ? #9a9a9a : #676767; font-size: 12px; overflow: elide; wrap: no-wrap; }
                             }
                         }
                     }
+
                     if root.panel == 5: VerticalLayout {
                         padding: 20px; spacing: 12px;
                         Text { text: "会话操作"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; font-weight: 650; }
-                        Text { text: "这些操作直接作用于当前 Codex 原生会话。"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; }
+                        Text { text: "这些操作作用于当前 Codex 会话。"; color: root.dark ? #9a9a9a : #676767; font-size: 13px; }
                         HorizontalLayout { spacing: 8px;
-                            ActionButton { label: "重命名"; dark: root.dark; width: 94px; clicked => { root.session-action("rename"); } }
-                            ActionButton { label: "分叉"; dark: root.dark; width: 82px; clicked => { root.session-action("fork"); } }
-                            ActionButton { label: "归档"; dark: root.dark; width: 82px; clicked => { root.session-action("archive"); } }
-                            ActionButton { label: "压缩上下文"; dark: root.dark; width: 112px; clicked => { root.session-action("compact"); } }
+                            SmallButton { label: "重命名"; dark: root.dark; width: 92px; clicked => { root.session-action("rename"); } }
+                            SmallButton { label: "分叉"; dark: root.dark; width: 80px; clicked => { root.session-action("fork"); } }
+                            SmallButton { label: "归档"; dark: root.dark; width: 80px; clicked => { root.session-action("archive"); } }
+                            SmallButton { label: "压缩上下文"; dark: root.dark; width: 110px; clicked => { root.session-action("compact"); } }
                         }
                         HorizontalLayout { spacing: 8px;
-                            ActionButton { label: "代码审查"; dark: root.dark; width: 94px; clicked => { root.session-action("review"); } }
-                            ActionButton { label: "回退"; dark: root.dark; width: 82px; clicked => { root.session-action("rollback"); } }
-                            ActionButton { label: "删除"; dark: root.dark; danger: true; width: 82px; clicked => { root.session-action("delete"); } }
+                            SmallButton { label: "代码审查"; dark: root.dark; width: 92px; clicked => { root.session-action("review"); } }
+                            SmallButton { label: "回退"; dark: root.dark; width: 80px; clicked => { root.session-action("rollback"); } }
+                            SmallButton { label: "删除"; dark: root.dark; danger: true; width: 80px; clicked => { root.session-action("delete"); } }
                         }
-                        Text { text: "重命名、回退和审查会在下方打开参数输入。"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; }
+                        Text { text: "重命名、回退和审查会在下方读取参数。"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; }
                         action-input := LineEdit { placeholder-text: "名称 / 回退轮数 / 审查说明"; }
-                        ActionButton { label: "执行当前操作"; dark: root.dark; prominent: true; width: 130px; clicked => { root.session-action("submit:" + action-input.text); } }
+                        SmallButton { label: "执行当前操作"; dark: root.dark; prominent: true; width: 132px; clicked => { root.session-action("submit:" + action-input.text); } }
                     }
                 }
             }

@@ -60,11 +60,20 @@ struct State {
     action: String,
     attachment: Option<Value>,
     stream_index: Option<usize>,
+    reasoning_index: Option<usize>,
+    tool_index: Option<usize>,
     busy: bool,
     approved: bool,
 }
 
 fn text(value: &Value, key: &str) -> String { value.get(key).and_then(Value::as_str).unwrap_or_default().to_string() }
+fn one_line(value: &str, limit: usize) -> String {
+    let joined = value.split_whitespace().collect::<Vec<_>>().join(" ");
+    let mut chars = joined.chars();
+    let mut out = chars.by_ref().take(limit).collect::<String>();
+    if chars.next().is_some() { out.push('…'); }
+    out
+}
 fn rpc(tx: &mpsc::UnboundedSender<Command>, tag: &str, name: &str, payload: Value) {
     let _ = tx.send(Command::Rpc { tag: tag.into(), name: name.into(), payload });
 }
@@ -72,13 +81,30 @@ fn messages(ui: &AppWindow) -> ModelRc<MessageRow> { ui.get_messages() }
 fn add_message(ui: &AppWindow, state: &mut State, role: &str, body: &str, tone: i32) {
     let model = messages(ui);
     let rows = model.as_any().downcast_ref::<VecModel<MessageRow>>().expect("messages model");
-    if rows.row_count() >= 500 { rows.remove(0); state.stream_index = state.stream_index.map(|i| i.saturating_sub(1)); }
+    if rows.row_count() >= 500 {
+        rows.remove(0);
+        state.stream_index = state.stream_index.map(|i| i.saturating_sub(1));
+        state.reasoning_index = state.reasoning_index.map(|i| i.saturating_sub(1));
+        state.tool_index = state.tool_index.map(|i| i.saturating_sub(1));
+    }
     rows.push(MessageRow { role: role.into(), body: body.chars().take(100_000).collect::<String>().into(), tone });
+}
+fn append_message_body(ui: &AppWindow, index: usize, text: &str) {
+    let model = messages(ui);
+    let rows = model.as_any().downcast_ref::<VecModel<MessageRow>>().expect("messages model");
+    if let Some(mut row) = rows.row_data(index) { row.body = format!("{}{}", row.body, text).into(); rows.set_row_data(index, row); }
+}
+fn update_message_body(ui: &AppWindow, index: usize, text: &str) {
+    let model = messages(ui);
+    let rows = model.as_any().downcast_ref::<VecModel<MessageRow>>().expect("messages model");
+    if let Some(mut row) = rows.row_data(index) { row.body = text.into(); rows.set_row_data(index, row); }
 }
 fn reset_messages(ui: &AppWindow, state: &mut State) {
     let model = messages(ui);
     model.as_any().downcast_ref::<VecModel<MessageRow>>().expect("messages model").clear();
     state.stream_index = None;
+    state.reasoning_index = None;
+    state.tool_index = None;
 }
 fn set_info(ui: &AppWindow, rows: Vec<InfoRow>) { ui.set_info(ModelRc::new(VecModel::from(rows))); }
 fn set_status(ui: &AppWindow, value: impl Into<SharedString>) { ui.set_status(value.into()); }
@@ -128,8 +154,8 @@ fn handle_reply(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
             s.threads = value["threads"].as_array().into_iter().flatten().filter_map(|thread| {
                 let id = text(thread, "id");
                 if id.is_empty() { return None; }
-                let title = text(thread, "title");
-                let preview = text(thread, "preview");
+                let title = one_line(&text(thread, "title"), 80);
+                let preview = one_line(&text(thread, "preview"), 80);
                 Some(ThreadRow { id: id.into(), title: if title.is_empty() { if preview.is_empty() { "未命名会话".into() } else { preview.into() } } else { title.into() }, cwd: text(thread, "cwd").into(), status: text(thread, "status").into() })
             }).collect();
             ui.set_threads(ModelRc::new(VecModel::from(s.threads.clone())));
@@ -161,11 +187,12 @@ fn handle_reply(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
                         "user" => add_message(ui, &mut s, "你", &text(item, "content"), 0),
                         "assistant" => add_message(ui, &mut s, "Codex", &text(item, "content"), 0),
                         _ => match kind.as_str() {
-                            "command" => add_message(ui, &mut s, "命令", &text(item, "command"), 1),
-                            "reasoning" => add_message(ui, &mut s, "思考", &text(item, "text"), 1),
-                            "file_change" => add_message(ui, &mut s, "文件变更", "文件差异可在变更面板查看", 1),
-                            "search" => add_message(ui, &mut s, "搜索", &text(item, "query"), 1),
-                            "mcp" => add_message(ui, &mut s, "MCP", &format!("{} / {}", text(item, "serverName"), text(item, "toolName")), 1),
+                            "command" => add_message(ui, &mut s, "活动", &format!("命令 · {}", one_line(&text(item, "command"), 220)), 1),
+                            "reasoning" => add_message(ui, &mut s, "活动", &format!("思考 · {}", one_line(&text(item, "text"), 220)), 1),
+                            "file_change" => add_message(ui, &mut s, "活动", &format!("文件变更 · {} 个文件", item["files"].as_array().map(Vec::len).unwrap_or(0)), 1),
+                            "search" => add_message(ui, &mut s, "活动", &format!("搜索 · {}", one_line(&text(item, "query"), 120)), 1),
+                            "mcp" => add_message(ui, &mut s, "活动", &format!("MCP · {} / {}", text(item, "serverName"), text(item, "toolName")), 1),
+                            "plan" => add_message(ui, &mut s, "活动", "计划已更新", 1),
                             _ => {}
                         }
                     }
@@ -177,6 +204,9 @@ fn handle_reply(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
             if !thread_id.is_empty() { s.thread_id = thread_id; }
             s.instance_id = text(value, "instanceId");
             s.attachment = None;
+            s.stream_index = None;
+            s.reasoning_index = None;
+            s.tool_index = None;
             ui.set_attachment_label("".into());
             ui.set_draft("".into());
             ui.set_busy(true);
@@ -298,23 +328,80 @@ fn handle_agent(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
     if !s.thread_id.is_empty() && !thread.is_empty() && s.thread_id != thread { return; }
     if s.thread_id.is_empty() && !thread.is_empty() { s.thread_id = thread; }
     match kind.as_str() {
-        "user_message" => { s.stream_index = None; add_message(ui, &mut s, "你", &text(payload, "text"), 0); }
+        "user_message" => {
+            s.stream_index = None;
+            s.reasoning_index = None;
+            s.tool_index = None;
+            add_message(ui, &mut s, "你", &text(payload, "text"), 0);
+        }
         "text_delta" => {
-            let model = messages(ui);
-            let rows = model.as_any().downcast_ref::<VecModel<MessageRow>>().expect("messages model");
+            s.reasoning_index = None;
+            s.tool_index = None;
             if let Some(i) = s.stream_index {
-                if let Some(mut row) = rows.row_data(i) { row.body = format!("{}{}", row.body, text(payload, "text")).into(); rows.set_row_data(i, row); }
+                append_message_body(ui, i, &text(payload, "text"));
             } else {
                 add_message(ui, &mut s, "Codex", &text(payload, "text"), 0);
-                s.stream_index = Some(rows.row_count().saturating_sub(1));
+                let rows = messages(ui);
+                s.stream_index = Some(rows.as_any().downcast_ref::<VecModel<MessageRow>>().expect("messages model").row_count().saturating_sub(1));
             }
         }
-        "tool_use" => { s.stream_index = None; add_message(ui, &mut s, "工具", &text(payload, "command"), 1); }
-        "tool_result" => { s.stream_index = None; }
-        "reasoning" => { s.stream_index = None; let summary = text(payload, "text"); if !summary.is_empty() { add_message(ui, &mut s, "思考", &summary, 1); } }
+        "tool_use" => {
+            s.stream_index = None;
+            s.reasoning_index = None;
+            let command = one_line(&text(payload, "command"), 220);
+            add_message(ui, &mut s, "活动", &format!("命令 · {command}"), 1);
+            let rows = messages(ui);
+            s.tool_index = Some(rows.as_any().downcast_ref::<VecModel<MessageRow>>().expect("messages model").row_count().saturating_sub(1));
+        }
+        "tool_result" => {
+            s.stream_index = None;
+            if let Some(i) = s.tool_index.take() {
+                let rows = messages(ui);
+                let model = rows.as_any().downcast_ref::<VecModel<MessageRow>>().expect("messages model");
+                if let Some(mut row) = model.row_data(i) {
+                    row.body = format!("{} · {}", row.body, if payload["ok"] == true { "完成" } else { "失败" }).into();
+                    model.set_row_data(i, row);
+                }
+            }
+        }
+        "reasoning" => {
+            s.stream_index = None;
+            let summary = one_line(&text(payload, "text"), 260);
+            if !summary.is_empty() {
+                if let Some(i) = s.reasoning_index {
+                    let rows = messages(ui);
+                    let model = rows.as_any().downcast_ref::<VecModel<MessageRow>>().expect("messages model");
+                    if let Some(mut row) = model.row_data(i) { row.body = format!("{} {}", row.body, summary).into(); model.set_row_data(i, row); }
+                } else {
+                    add_message(ui, &mut s, "活动", &format!("思考 · {summary}"), 1);
+                    let rows = messages(ui);
+                    s.reasoning_index = Some(rows.as_any().downcast_ref::<VecModel<MessageRow>>().expect("messages model").row_count().saturating_sub(1));
+                }
+            }
+        }
+        "file_change" => {
+            s.stream_index = None;
+            s.reasoning_index = None;
+            s.tool_index = None;
+            let count = payload["files"].as_array().map(Vec::len).unwrap_or(0);
+            add_message(ui, &mut s, "活动", &format!("文件变更 · {count} 个文件"), 1);
+        }
+        "search" => {
+            s.stream_index = None;
+            s.reasoning_index = None;
+            s.tool_index = None;
+            add_message(ui, &mut s, "活动", &format!("搜索 · {}", one_line(&text(payload, "query"), 120)), 1);
+        }
+        "mcp_use" => {
+            s.stream_index = None;
+            s.reasoning_index = None;
+            s.tool_index = None;
+            add_message(ui, &mut s, "活动", &format!("MCP · {} / {}", text(payload, "serverName"), text(payload, "toolName")), 1);
+        }
+        "plan" => { s.stream_index = None; s.reasoning_index = None; s.tool_index = None; add_message(ui, &mut s, "活动", "计划已更新", 1); }
         "approval_request" | "user_input_request" => { rpc(tx, "needs-you:snapshot", "needs-you:snapshot", json!({})); ui.set_panel(3); }
-        "result" => { s.stream_index = None; s.busy = false; ui.set_busy(false); rpc(tx, "thread:list", "thread:list", json!({"limit":100})); }
-        "error" => { s.stream_index = None; s.busy = false; ui.set_busy(false); add_message(ui, &mut s, "错误", &text(payload, "message"), 2); }
+        "result" => { s.stream_index = None; s.reasoning_index = None; s.tool_index = None; s.busy = false; ui.set_busy(false); rpc(tx, "thread:list", "thread:list", json!({"limit":100})); }
+        "error" => { s.stream_index = None; s.reasoning_index = None; s.tool_index = None; s.busy = false; ui.set_busy(false); add_message(ui, &mut s, "错误", &text(payload, "message"), 2); }
         "status" => { let value = text(payload, "state"); if value == "running" { ui.set_busy(true); } }
         _ => {}
     }

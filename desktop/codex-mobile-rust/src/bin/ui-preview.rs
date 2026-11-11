@@ -23,6 +23,7 @@ fn main() -> Result<(), slint::PlatformError> {
         MessageRow { role: "你".into(), body: "本机的 Codex Mobile 做个 Windows 原生前端软件。界面要简洁、美观，并且能跟随系统切换深色和浅色。".into(), tone: 0 },
         MessageRow { role: "Codex".into(), body: "我会沿用现有网页版的视觉语言：专注阅读的对话区、清晰的会话入口，以及始终容易找到的输入框。Windows 版使用 Rust 和 Slint，不嵌入网页。".into(), tone: 0 },
         MessageRow { role: "你".into(), body: "注意内存和 CPU 占用，做成小而美的软件。".into(), tone: 0 },
+        MessageRow { role: "活动".into(), body: "命令 · cargo test --release · 完成".into(), tone: 1 },
         MessageRow { role: "Codex".into(), body: "会话列表只创建可见行；流式文本按批次更新；系统主题变化由 Windows 通知触发。空闲时无需持续轮询。".into(), tone: 0 },
     ] })));
     ui.run()
