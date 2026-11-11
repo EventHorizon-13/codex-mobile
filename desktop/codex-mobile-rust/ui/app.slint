@@ -296,7 +296,7 @@ export component AppWindow inherits Window {
                             menu-area := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 0; } }
                         }
                         Rectangle {
-                            width: min(parent.width - 112px, (root.panel == 0 && (root.title-text == "" || root.title-text == "新会话") ? 168px : 280px)); height: 32px;
+                            width: min(parent.width - 112px, (root.panel == 0 && (root.title-text == "" || root.title-text == "新会话") ? 184px : 280px)); height: 32px;
                             x: (parent.width - self.width) / 2; y: 10px;
                             border-radius: 16px; border-width: 1px; border-color: root.dark ? #262626 : #f0f0f2; background: context-area.has-hover ? (root.dark ? #202020 : #f3f4f5) : (root.dark ? #121212 : #f8f9fa);
                             HorizontalLayout { padding-left: 12px; padding-right: 12px; spacing: 8px;
