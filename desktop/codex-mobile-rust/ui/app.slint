@@ -424,7 +424,7 @@ export component AppWindow inherits Window {
                                 horizontal-scrollbar-policy: always-off;
                                 for msg in root.messages: Rectangle {
                                     width: parent.width;
-                                    height: msg.role == "你" ? body-user.preferred-height + 22px : msg.role == "活动" ? body-activity.preferred-height + 14px : body-other.preferred-height + 16px;
+                                    height: body-text.preferred-height + (msg.role == "你" ? 22px : msg.role == "活动" ? 14px : 16px);
                                     background: transparent;
                                     if msg.role == "你": Rectangle {
                                         width: min(parent.width, 456px); height: parent.height; x: parent.width - self.width;
@@ -432,20 +432,13 @@ export component AppWindow inherits Window {
                                     }
                                     if msg.role == "你": Rectangle { x: parent.width - min(parent.width, 456px); y: 8px; width: 2px; height: parent.height - 16px; background: root.dark ? #e6e9f0 : #1c2430; }
                                     if msg.role == "活动": Rectangle { x: 1px; y: 9px; width: 7px; height: 7px; border-radius: 4px; background: msg.tone == 2 ? #df1c1c : (root.dark ? #777777 : #888888); }
-                                    if msg.role == "活动": body-activity := Text {
-                                        x: 18px; y: 3px; width: parent.width - 18px;
-                                        text: msg.body; color: msg.tone == 2 ? (root.dark ? #ff8888 : #df1c1c) : (root.dark ? #9a9a9a : #676767);
-                                        font-size: 13px; wrap: word-wrap;
-                                    }
-                                    if msg.role == "你": body-user := Text {
-                                        x: parent.width - min(parent.width, 456px) + 14px; y: 10px; width: min(parent.width, 456px) - 28px;
-                                        text: msg.body; color: root.dark ? #e6e9f0 : #1c2430; font-size: 16px; wrap: word-wrap;
-                                    }
-                                    if msg.role != "你" && msg.role != "活动": body-other := Text {
-                                        x: 0px; y: 5px; width: parent.width;
+                                    body-text := Text {
+                                        x: msg.role == "你" ? parent.width - min(parent.width, 456px) + 14px : msg.role == "活动" ? 18px : 0px;
+                                        y: msg.role == "你" ? 10px : msg.role == "活动" ? 3px : 5px;
+                                        width: msg.role == "你" ? min(parent.width, 456px) - 28px : msg.role == "活动" ? parent.width - 18px : parent.width;
                                         text: msg.body;
-                                        color: msg.role == "错误" || msg.tone == 2 ? (root.dark ? #ff8888 : #bf2020) : msg.role == "系统" ? (root.dark ? #9a9a9a : #676767) : (root.dark ? #f2f2f2 : #0d0d0d);
-                                        font-size: msg.role == "系统" ? 13px : 16px;
+                                        color: msg.role == "你" ? (root.dark ? #e6e9f0 : #1c2430) : msg.role == "错误" || msg.tone == 2 ? (root.dark ? #ff8888 : #bf2020) : msg.role == "活动" || msg.role == "系统" ? (root.dark ? #9a9a9a : #676767) : (root.dark ? #f2f2f2 : #0d0d0d);
+                                        font-size: msg.role == "活动" || msg.role == "系统" ? 13px : 16px;
                                         horizontal-alignment: msg.role == "系统" ? center : left;
                                         wrap: word-wrap;
                                     }
