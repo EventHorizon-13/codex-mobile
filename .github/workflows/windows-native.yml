@@ -93,7 +93,7 @@ jobs:
             for theme in dark light; do
               desktop/codex-mobile-rust/target/release/ui-preview --$theme >"preview/$theme.log" 2>&1 &
               app_pid=$!
-              sleep 4
+              sleep 9
               if ! kill -0 "$app_pid" 2>/dev/null; then cat "preview/$theme.log"; exit 1; fi
               scrot "preview/$theme.png"
               kill "$app_pid"

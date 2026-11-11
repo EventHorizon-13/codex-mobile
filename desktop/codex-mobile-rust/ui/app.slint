@@ -120,9 +120,9 @@ export component AppWindow inherits Window {
                 HorizontalLayout {
                     padding-left: 17px;
                     spacing: 10px;
-                    Text { text: "✦"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; vertical-alignment: center; }
-                    Text { text: "Codex"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 650; vertical-alignment: center; }
-                    Text { text: "Mobile"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; vertical-alignment: center; }
+                    Text { text: "✦"; width: 21px; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; vertical-alignment: center; }
+                    Text { text: "Codex"; width: 42px; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 650; vertical-alignment: center; }
+                    Text { text: "Mobile"; width: 45px; color: root.dark ? #9a9a9a : #676767; font-size: 12px; vertical-alignment: center; }
                 }
             }
             HorizontalLayout {
@@ -234,6 +234,7 @@ export component AppWindow inherits Window {
                                     y: 10px;
                                     border-radius: msg.role == "你" ? 18px : 0px;
                                     background: msg.role == "你" ? (root.dark ? #32363f : #dde1e8) : transparent;
+                                    if msg.role == "你": Rectangle { x: 12px; y: 12px; width: 2px; height: parent.height - 24px; background: root.dark ? #e6e9f0 : #1c2430; }
                                     if msg.role != "你": Rectangle { x: 0px; y: 11px; width: 27px; height: 27px; border-radius: 14px; background: root.dark ? #262626 : #f1f1f1;
                                         Text { text: msg.tone == 1 ? "⌘" : "✦"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 15px; horizontal-alignment: center; vertical-alignment: center; }
                                     }
