@@ -1,7 +1,7 @@
 import { Palette, LineEdit, TextEdit, ListView, ComboBox, CheckBox } from "std-widgets.slint";
 
-export struct ThreadRow { id: string, title: string, cwd: string, status: string }
-export struct MessageRow { role: string, body: string, tone: int }
+export struct ThreadRow { id: string, title: string, cwd: string, status: string, meta: string }
+export struct MessageRow { role: string, body: string, tone: int, width: int }
 export struct FileRow { name: string, path: string, directory: bool }
 export struct NeedRow { id: string, title: string, detail: string, thread-id: string, instance-id: string, approval-id: string, turn-id: string, item-id: string, decisions: string, question: bool }
 export struct InfoRow { title: string, detail: string }
@@ -41,6 +41,13 @@ component IconGit inherits Path {
     commands: "M6 3v11M6 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM6 10c0 2 12-1 12 4v2";
 }
 
+component IconChat inherits Path {
+    in property <color> tint: #676767;
+    width: 17px; height: 17px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M4 5.5h16v11H9l-5 4v-15Z";
+}
+
 component IconGear inherits Path {
     in property <color> tint: #676767;
     width: 17px; height: 17px; viewbox-width: 24; viewbox-height: 24;
@@ -76,6 +83,20 @@ component IconChevron inherits Path {
     commands: "M9 5l7 7-7 7";
 }
 
+component IconChevronDown inherits Path {
+    in property <color> tint: #676767;
+    width: 9px; height: 9px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2.4px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M5 9l7 7 7-7";
+}
+
+component IconPanel inherits Path {
+    in property <color> tint: #676767;
+    width: 18px; height: 18px; viewbox-width: 24; viewbox-height: 24;
+    fill: transparent; stroke: tint; stroke-width: 2.2px; stroke-line-cap: round; stroke-line-join: round;
+    commands: "M4.75 5.75A1.75 1.75 0 0 1 6.5 4h11a1.75 1.75 0 0 1 1.75 1.75v12.5A1.75 1.75 0 0 1 17.5 20h-11a1.75 1.75 0 0 1-1.75-1.75V5.75ZM9 4v16M12.5 8h3.75M12.5 12h3.75M12.5 16h2.5";
+}
+
 component SmallButton inherits Rectangle {
     in property <string> label;
     in property <bool> dark;
@@ -98,10 +119,30 @@ component SmallButton inherits Rectangle {
     area := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
 }
 
+component SuggestionRow inherits Rectangle {
+    in property <string> title;
+    in property <string> detail;
+    in property <bool> dark;
+    in property <bool> alert: false;
+    callback clicked();
+    height: 52px;
+    background: area.has-hover ? (dark ? #1e1e1e : #f3f4f5) : transparent;
+    Rectangle { y: 0px; width: parent.width; height: 1px; background: dark ? #2e2e2e : #e3e3e3; }
+    Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: dark ? #2e2e2e : #e3e3e3; }
+    HorizontalLayout { padding-left: 4px; padding-right: 4px; spacing: 12px;
+        if alert: IconAlert { tint: dark ? #e09a10 : #9a5f22; cross-axis-self-alignment: center; }
+        if !alert: IconChat { tint: dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
+        VerticalLayout { spacing: 1px; vertical-stretch: 1;
+            Text { text: title; color: dark ? #f2f2f2 : #0d0d0d; font-size: 15px; font-weight: 500; vertical-alignment: center; }
+            Text { text: detail; color: dark ? #9a9a9a : #676767; font-size: 13px; font-weight: 500; overflow: elide; wrap: no-wrap; }
+        }
+    }
+    area := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+}
+
 export component AppWindow inherits Window {
     title: "Codex Mobile";
-    no-frame: true;
-    resize-border-width: 6px;
+    no-frame: false;
     preferred-width: 1180px;
     preferred-height: 760px;
     min-width: 880px;
@@ -120,6 +161,8 @@ export component AppWindow inherits Window {
     in-out property <string> status: "未连接";
     in-out property <string> title-text: "新会话";
     in-out property <string> cwd: "";
+    in-out property <string> project-name: "workspace";
+    in-out property <string> display-font: "Noto Serif CJK SC";
     in-out property <string> draft: "";
     in-out property <string> attachment-label: "";
     in-out property <string> preview: "";
@@ -165,188 +208,110 @@ export component AppWindow inherits Window {
     callback set-sandbox(string);
     callback forget-device();
 
-    VerticalLayout {
-        spacing: 0px;
-        Rectangle {
-            height: 40px;
-            background: root.dark ? #191919 : #ffffff;
-            WindowMoveArea {
-                width: parent.width - 138px;
-                HorizontalLayout {
-                    padding-left: 14px;
-                    spacing: 8px;
-                    Text { text: "✦"; width: 18px; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 16px; vertical-alignment: center; }
-                    Text { text: "Codex"; width: 42px; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 650; vertical-alignment: center; }
-                    Text { text: "Mobile"; width: 45px; color: root.dark ? #9a9a9a : #676767; font-size: 12px; vertical-alignment: center; }
-                }
-            }
-            HorizontalLayout {
-                x: parent.width - 138px;
-                width: 138px;
-                Rectangle { width: 46px; background: min-area.has-hover ? (root.dark ? #242424 : #f0f0f2) : transparent;
-                    Text { text: "−"; color: root.dark ? #f2f2f2 : #333333; font-size: 17px; horizontal-alignment: center; vertical-alignment: center; }
-                    min-area := TouchArea { mouse-cursor: pointer; clicked => { root.minimized = true; } }
-                }
-                Rectangle { width: 46px; background: max-area.has-hover ? (root.dark ? #242424 : #f0f0f2) : transparent;
-                    Text { text: root.maximized ? "❐" : "□"; color: root.dark ? #f2f2f2 : #333333; font-size: 16px; horizontal-alignment: center; vertical-alignment: center; }
-                    max-area := TouchArea { mouse-cursor: pointer; clicked => { root.maximized = !root.maximized; } }
-                }
-                Rectangle { width: 46px; background: close-area.has-hover ? #c84545 : transparent;
-                    Text { text: "×"; color: close-area.has-hover ? white : (root.dark ? #f2f2f2 : #333333); font-size: 19px; horizontal-alignment: center; vertical-alignment: center; }
-                    close-area := TouchArea { mouse-cursor: pointer; clicked => { root.close(); } }
-                }
-            }
-        }
-
-        HorizontalLayout {
+    HorizontalLayout {
             spacing: 0px;
             Rectangle {
-                width: 280px;
-                background: root.dark ? #191919 : #ffffff;
+                width: 300px;
+                background: root.dark ? #1c1c1c : #ffffff;
                 VerticalLayout {
                     spacing: 0px;
                     Rectangle {
                         height: 60px;
                         HorizontalLayout {
                             padding-left: 16px; padding-right: 12px;
-                            Text { text: "工作区与会话"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; font-weight: 650; vertical-alignment: center; horizontal-stretch: 1; }
+                            Text { text: "工作区与会话"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; font-weight: 600; vertical-alignment: center; horizontal-stretch: 1; }
                         }
                     }
-                    Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
+                    Rectangle { height: 1px; background: root.dark ? #262626 : #f0f0f2; }
                     Rectangle {
-                        height: 44px; background: row-one.has-hover ? (root.dark ? #242424 : #f0f0f2) : transparent;
-                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 10px;
-                            IconPlus { tint: root.dark ? #d4d4d4 : #555555; cross-axis-self-alignment: center; }
-                            Text { text: "新对话"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
-                        }
-                        row-one := TouchArea { mouse-cursor: pointer; clicked => { root.new-thread(); root.panel = 0; } }
-                    }
-                    Rectangle {
-                        height: 40px; background: row-refresh.has-hover ? (root.dark ? #242424 : #f0f0f2) : transparent;
-                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 10px;
-                            IconRefresh { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
-                            Text { text: "刷新会话"; color: root.dark ? #9a9a9a : #676767; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
-                        }
-                        row-refresh := TouchArea { mouse-cursor: pointer; clicked => { root.refresh(); } }
-                    }
-                    Rectangle {
-                        height: 38px; background: row-archived.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
-                        HorizontalLayout { padding-left: 14px; padding-right: 12px; spacing: 10px;
+                        height: 36px; background: row-archived.has-hover ? (root.dark ? #242424 : #f3f4f5) : transparent;
+                        HorizontalLayout { padding-left: 20px; padding-right: 12px; spacing: 8px;
                             IconArchive { tint: root.show-archived ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #777777 : #888888); cross-axis-self-alignment: center; }
                             Text { text: root.show-archived ? "返回会话" : "已归档"; color: root.show-archived ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #777777 : #888888); font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
-                            IconChevron { tint: root.show-archived ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #666666 : #999999); cross-axis-self-alignment: center; }
                         }
                         row-archived := TouchArea { mouse-cursor: pointer; clicked => { root.toggle-archived(); } }
                     }
-                    Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
                     Rectangle {
-                        height: 42px;
-                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 9px;
+                        x: 8px; width: parent.width - 16px;
+                        height: 40px;
+                        HorizontalLayout { padding-left: 8px; padding-right: 4px; spacing: 8px;
                             IconFolder { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
-                            Text { text: "Codex Mobile"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 650; vertical-alignment: center; horizontal-stretch: 1; }
-                            Rectangle { width: 24px; height: 24px; border-radius: 8px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: root.dark ? #191919 : #ffffff;
-                                IconPlus { x: 4px; y: 4px; tint: root.dark ? #9a9a9a : #676767; }
+                            IconChevronDown { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
+                            Text { text: root.project-name; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 15px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; overflow: elide; wrap: no-wrap; }
+                            Rectangle { width: 28px; height: 28px; border-radius: 8px; border-width: 1px; border-color: root.dark ? #2e2e2e : #e3e3e3; background: root.dark ? #1c1c1c : #ffffff;
+                                IconPlus { x: 5.5px; y: 5.5px; tint: root.dark ? #9a9a9a : #676767; }
                                 plus-area := TouchArea { mouse-cursor: pointer; clicked => { root.new-thread(); root.panel = 0; } }
                             }
                         }
                     }
-                    ListView {
+                    Rectangle {
                         vertical-stretch: 1;
-                        horizontal-scrollbar-policy: always-off;
-                        for item[i] in root.threads: Rectangle {
-                            height: 56px;
-                            background: transparent;
-                            Rectangle {
-                                x: 8px; width: parent.width - 16px; height: 54px;
-                                border-radius: 12px;
-                                border-width: root.selected-thread == i ? 1px : 0px;
-                                border-color: root.dark ? #2b2b2b : #e3e3e3;
-                                background: root.selected-thread == i ? (root.dark ? #121212 : #f8f9fa) : thread-area.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
+                        ListView {
+                            x: 24px; width: parent.width - 36px; height: parent.height;
+                            horizontal-scrollbar-policy: always-off;
+                            for item[i] in root.threads: Rectangle {
+                                height: 76px;
+                                background: transparent;
                                 Rectangle {
-                                    x: 11px; y: (parent.height - 7px) / 2; width: 7px; height: 7px; border-radius: 4px;
-                                    visible: item.status != "";
-                                    background: item.status == "error" ? #df1c1c : item.status == "needs-you" || item.status == "needs_you" ? #e09a10 : item.status == "running" ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #666666 : #aaaaaa);
+                                    width: parent.width; height: 70px;
+                                    border-radius: 12px;
+                                    border-width: root.selected-thread == i ? 1px : 0px;
+                                    border-color: root.dark ? #2e2e2e : #e3e3e3;
+                                    background: root.selected-thread == i ? (root.dark ? #121212 : #f8f9fa) : thread-area.has-hover ? (root.dark ? #242424 : #f3f4f5) : transparent;
+                                    Rectangle {
+                                        x: 12px; y: 18px; width: 7px; height: 7px; border-radius: 4px;
+                                        visible: item.status != "";
+                                        background: item.status == "error" ? #df1c1c : item.status == "needs-you" || item.status == "needs_you" ? #e09a10 : item.status == "running" ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #666666 : #aaaaaa);
+                                    }
+                                    Rectangle { x: 21px; y: 18px; width: 7px; height: 7px; border-radius: 4px; background: root.dark ? #8d8d8d : #a6a6a6; }
+                                    Text { x: 36px; y: 11px; width: parent.width - 48px; text: item.title; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 16px; font-weight: 500; overflow: elide; wrap: no-wrap; }
+                                    Text { x: 36px; y: 38px; width: parent.width - 48px; text: item.meta; color: root.dark ? #9a9a9a : #676767; font-size: 12px; font-weight: 500; overflow: elide; wrap: no-wrap; }
+                                    thread-area := TouchArea { mouse-cursor: pointer; clicked => { root.open-thread(i); } }
                                 }
-                                Text {
-                                    x: 24px; width: parent.width - 34px;
-                                    text: item.title;
-                                    color: root.selected-thread == i ? (root.dark ? #f2f2f2 : #0d0d0d) : (root.dark ? #d0d0d0 : #303030);
-                                    font-size: 14px; font-weight: root.selected-thread == i ? 600 : 500;
-                                    overflow: elide; wrap: no-wrap; vertical-alignment: center;
-                                }
-                                thread-area := TouchArea { mouse-cursor: pointer; clicked => { root.open-thread(i); } }
                             }
                         }
                     }
-                    Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
                     Rectangle {
-                        height: 46px; background: row-files.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
-                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 9px;
-                            IconFolder { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
-                            Text { text: "工作区文件"; color: root.dark ? #d0d0d0 : #303030; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
-                        }
-                        row-files := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 1; root.load-files(); } }
-                    }
-                    Rectangle {
-                        height: 46px; background: row-git.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
-                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 9px;
-                            IconGit { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
-                            Text { text: "Git 变更"; color: root.dark ? #d0d0d0 : #303030; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
-                        }
-                        row-git := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 2; root.load-git(); } }
-                    }
-                    Rectangle {
-                        height: 46px; background: row-needs.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
-                        HorizontalLayout { padding-left: 14px; padding-right: 10px; spacing: 9px;
-                            IconAlert { tint: root.dark ? #e09a10 : #9a5f22; cross-axis-self-alignment: center; }
-                            Text { text: "需要你"; color: root.dark ? #d0d0d0 : #303030; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
-                        }
-                        row-needs := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 3; root.open-info("needs"); } }
-                    }
-                    Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
-                    Rectangle {
-                        height: 52px; background: row-settings.has-hover ? (root.dark ? #202020 : #f3f4f5) : transparent;
-                        HorizontalLayout { padding-left: 14px; padding-right: 12px; spacing: 9px;
-                            IconGear { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
-                            Text { text: "设置与状态"; color: root.dark ? #d0d0d0 : #303030; font-size: 13px; vertical-alignment: center; horizontal-stretch: 1; }
-                            IconChevron { tint: root.dark ? #666666 : #999999; cross-axis-self-alignment: center; }
+                        height: 52px; background: row-settings.has-hover ? (root.dark ? #242424 : #f3f4f5) : (root.dark ? #1c1c1c : #ffffff);
+                        Rectangle { y: 0px; width: parent.width; height: 1px; background: root.dark ? #262626 : #f0f0f2; }
+                        HorizontalLayout { padding-left: 16px; padding-right: 10px; spacing: 8px;
+                            IconGear { tint: root.dark ? #f2f2f2 : #0d0d0d; cross-axis-self-alignment: center; }
+                            Text { text: "设置与状态"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 600; vertical-alignment: center; horizontal-stretch: 1; }
+                            IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
                         }
                         row-settings := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 4; root.open-info("settings"); } }
                     }
-                    Rectangle { height: 34px; background: root.dark ? #191919 : #ffffff;
-                        Text { x: 14px; y: 5px; width: parent.width - 28px; text: root.status; color: root.dark ? #777777 : #888888; font-size: 11px; overflow: elide; wrap: no-wrap; }
-                        Text { x: 14px; y: 19px; text: "Powered by Slint"; color: root.dark ? #555555 : #aaaaaa; font-size: 9px; }
-                    }
                 }
             }
-            Rectangle { width: 1px; background: root.dark ? #242424 : #f0f0f2; }
+            Rectangle { width: 1px; background: root.dark ? #262626 : #f0f0f2; }
             Rectangle {
                 background: root.dark ? #121212 : #f8f9fa;
                 VerticalLayout {
                     spacing: 0px;
                     Rectangle {
-                        height: 56px;
-                        background: root.dark ? #191919 : #ffffff;
-                        HorizontalLayout {
-                            padding-left: 16px; padding-right: 14px; spacing: 8px;
-                            Rectangle {
-                                height: 34px; border-radius: 17px; border-width: 1px; border-color: root.dark ? #242424 : #f0f0f2; background: root.dark ? #121212 : #f8f9fa;
-                                horizontal-stretch: 1; max-width: 520px;
-                                HorizontalLayout { padding-left: 12px; padding-right: 12px; spacing: 8px;
-                                    IconFolder { tint: root.dark ? #f2f2f2 : #0d0d0d; cross-axis-self-alignment: center; }
-                                    Text { text: root.panel == 0 ? (root.title-text == "" ? "新会话" : root.title-text) : root.panel == 1 ? "工作区" : root.panel == 2 ? "Git 变更" : root.panel == 3 ? "需要你" : root.panel == 4 ? "设置与状态" : "会话操作"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 13px; font-weight: 600; overflow: elide; wrap: no-wrap; vertical-alignment: center; horizontal-stretch: 1; }
-                                    IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
-                                }
+                        height: 52px;
+                        background: root.dark ? #1c1c1c : #ffffff;
+                        Rectangle { x: 12px; y: 8px; width: 36px; height: 36px; border-radius: 12px; border-width: 1px; border-color: root.dark ? #2e2e2e : #e3e3e3; background: menu-area.has-hover ? (root.dark ? #242424 : #f0f0f2) : (root.dark ? #1c1c1c : #ffffff);
+                            IconPanel { x: 9px; y: 9px; tint: root.dark ? #9a9a9a : #676767; }
+                            menu-area := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 0; } }
+                        }
+                        Rectangle {
+                            width: min(parent.width - 112px, 280px); height: 32px;
+                            x: (parent.width - self.width) / 2; y: 10px;
+                            border-radius: 16px; border-width: 1px; border-color: root.dark ? #262626 : #f0f0f2; background: context-area.has-hover ? (root.dark ? #202020 : #f3f4f5) : (root.dark ? #121212 : #f8f9fa);
+                            HorizontalLayout { padding-left: 12px; padding-right: 12px; spacing: 8px;
+                                IconFolder { width: 14px; height: 14px; tint: root.dark ? #f2f2f2 : #0d0d0d; cross-axis-self-alignment: center; }
+                                Text { text: root.project-name; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 12px; font-weight: 700; overflow: elide; wrap: no-wrap; vertical-alignment: center; }
+                                Text { text: root.panel == 0 ? (root.title-text == "" ? "新会话" : root.title-text) : root.panel == 1 ? "工作区" : root.panel == 2 ? "Git 变更" : root.panel == 3 ? "需要你" : root.panel == 4 ? "设置与状态" : "会话操作"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; font-weight: 500; overflow: elide; wrap: no-wrap; vertical-alignment: center; horizontal-stretch: 1; }
+                                Text { text: "›"; color: root.dark ? #9a9a9a : #676767; font-size: 14px; vertical-alignment: center; }
                             }
-                            Rectangle { width: 36px; height: 36px; border-radius: 12px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: new-area.has-hover ? (root.dark ? #242424 : #f0f0f2) : (root.dark ? #191919 : #ffffff);
-                                IconPlus { x: 9.5px; y: 9.5px; tint: root.dark ? #f2f2f2 : #0d0d0d; }
-                                new-area := TouchArea { mouse-cursor: pointer; clicked => { root.new-thread(); root.panel = 0; } }
-                            }
-                            if root.busy: SmallButton { label: "停止"; dark: root.dark; danger: true; width: 64px; clicked => { root.stop-turn(); } }
-                            if root.panel == 0 && root.connected: SmallButton { label: "···"; dark: root.dark; width: 42px; clicked => { root.panel = 5; } }
+                            context-area := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 1; root.load-files(); } }
+                        }
+                        Rectangle { x: parent.width - 48px; y: 8px; width: 36px; height: 36px; border-radius: 12px; border-width: 1px; border-color: root.dark ? #2e2e2e : #e3e3e3; background: new-area.has-hover ? (root.dark ? #242424 : #f0f0f2) : (root.dark ? #1c1c1c : #ffffff);
+                            IconPlus { x: 9px; y: 9px; tint: root.dark ? #9a9a9a : #676767; }
+                            new-area := TouchArea { mouse-cursor: pointer; clicked => { root.new-thread(); root.panel = 0; } }
                         }
                     }
-                    Rectangle { height: 1px; background: root.dark ? #242424 : #f0f0f2; }
 
                     if root.panel == 0 && !root.connected: Rectangle {
                         vertical-stretch: 1;
@@ -373,52 +338,26 @@ export component AppWindow inherits Window {
                         if root.messages.length == 0: Rectangle {
                             vertical-stretch: 1;
                             Rectangle {
-                                width: min(parent.width - 48px, 720px); height: 293px;
-                                x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2 - 12px;
+                                width: min(parent.width - 48px, 690px);
+                                height: root.threads.length > 0 && root.needs.length > 0 ? 192px : (root.threads.length > 0 || root.needs.length > 0 ? 140px : 80px);
+                                x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
                                 background: transparent;
                                 VerticalLayout { spacing: 0px;
-                                    Text { text: "这轮改什么？"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 28px; font-weight: 600; horizontal-alignment: center; }
-                                    Rectangle { height: 26px; background: transparent; }
-                                    Rectangle { height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
-                                    Rectangle {
-                                        height: 50px; background: row-suggest-one.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
-                                        Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
-                                        HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
-                                            Text { text: "↻"; color: root.dark ? #9a9a9a : #676767; font-size: 16px; vertical-alignment: center; }
-                                            Text { text: "继续最近会话"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
-                                            IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
-                                        }
-                                        row-suggest-one := TouchArea { mouse-cursor: pointer; clicked => { if root.threads.length > 0 { root.open-thread(0); } else { root.new-thread(); } root.panel = 0; } }
+                                    Text { height: 36px; text: "这轮改什么？"; color: root.dark ? #f2f2f2 : #0d0d0d; font-family: root.display-font; font-size: 28px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                                    Text { height: 18px; text: "在 " + root.project-name; color: root.dark ? #9a9a9a : #676767; font-size: 15px; horizontal-alignment: center; vertical-alignment: center; }
+                                    Rectangle { height: 28px; background: transparent; }
+                                    if root.threads.length > 0: SuggestionRow {
+                                        title: "继续上次会话";
+                                        detail: root.threads[0].title;
+                                        dark: root.dark;
+                                        clicked => { root.open-thread(0); root.panel = 0; }
                                     }
-                                    Rectangle {
-                                        height: 50px; background: row-suggest-two.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
-                                        Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
-                                        HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
-                                            IconFolder { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
-                                            Text { text: "打开工作区文件"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
-                                            IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
-                                        }
-                                        row-suggest-two := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 1; root.load-files(); } }
-                                    }
-                                    Rectangle {
-                                        height: 50px; background: row-suggest-three.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
-                                        Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
-                                        HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
-                                            IconGit { tint: root.dark ? #9a9a9a : #676767; cross-axis-self-alignment: center; }
-                                            Text { text: "查看 Git 变更"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
-                                            IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
-                                        }
-                                        row-suggest-three := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 2; root.load-git(); } }
-                                    }
-                                    Rectangle {
-                                        height: 50px; background: row-suggest-four.has-hover ? (root.dark ? #1e1e1e : #f3f4f5) : transparent;
-                                        Rectangle { y: parent.height - 1px; width: parent.width; height: 1px; background: root.dark ? #2b2b2b : #e3e3e3; }
-                                        HorizontalLayout { padding-left: 10px; padding-right: 10px; spacing: 10px;
-                                            IconAlert { tint: root.dark ? #e09a10 : #9a5f22; cross-axis-self-alignment: center; }
-                                            Text { text: "处理待审批"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 500; vertical-alignment: center; horizontal-stretch: 1; }
-                                            IconChevron { tint: root.dark ? #777777 : #999999; cross-axis-self-alignment: center; }
-                                        }
-                                        row-suggest-four := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 3; root.open-info("needs"); } }
+                                    if root.needs.length > 0: SuggestionRow {
+                                        title: "处理待审批";
+                                        detail: root.needs[0].title;
+                                        dark: root.dark;
+                                        alert: true;
+                                        clicked => { root.panel = 3; root.open-info("needs"); }
                                     }
                                 }
                             }
@@ -427,26 +366,29 @@ export component AppWindow inherits Window {
                             vertical-stretch: 1;
                             background: transparent;
                             ListView {
-                                width: min(parent.width - 48px, 720px); height: parent.height;
+                                width: min(parent.width - 32px, 690px); height: parent.height - 20px;
                                 x: (parent.width - self.width) / 2;
+                                y: 20px;
                                 horizontal-scrollbar-policy: always-off;
                                 for msg in root.messages: Rectangle {
                                     width: parent.width;
-                                    height: body-text.preferred-height + (msg.role == "你" ? 22px : msg.role == "活动" ? 14px : 16px);
+                                    property <length> bubble-width: min(parent.width, msg.width * 1px);
+                                    property <length> bubble-height: body-text.preferred-height + 16px;
+                                    height: msg.role == "你" ? bubble-height + 20px : body-text.preferred-height + 20px;
                                     background: transparent;
                                     if msg.role == "你": Rectangle {
-                                        width: min(parent.width, 456px); height: parent.height; x: parent.width - self.width;
+                                        width: bubble-width; height: bubble-height; x: parent.width - self.width;
                                         background: root.dark ? #32363f : #dde1e8; border-radius: 12px;
                                     }
-                                    if msg.role == "你": Rectangle { x: parent.width - min(parent.width, 456px); y: 8px; width: 2px; height: parent.height - 16px; background: root.dark ? #e6e9f0 : #1c2430; }
-                                    if msg.role == "活动": Rectangle { x: 1px; y: 9px; width: 7px; height: 7px; border-radius: 4px; background: msg.tone == 2 ? #df1c1c : (root.dark ? #777777 : #888888); }
+                                    if msg.role == "你": Rectangle { x: parent.width - bubble-width; y: 8px; width: 2px; height: bubble-height - 16px; background: root.dark ? #e6e9f0 : #1c2430; }
+                                    if msg.role == "活动": Rectangle { x: 0px; y: 7px; width: 7px; height: 7px; border-radius: 4px; background: msg.tone == 2 ? #df1c1c : (root.dark ? #9a9a9a : #676767); }
                                     body-text := Text {
-                                        x: msg.role == "你" ? parent.width - min(parent.width, 456px) + 14px : msg.role == "活动" ? 18px : 0px;
-                                        y: msg.role == "你" ? 10px : msg.role == "活动" ? 3px : 5px;
-                                        width: msg.role == "你" ? min(parent.width, 456px) - 28px : msg.role == "活动" ? parent.width - 18px : parent.width;
+                                        x: msg.role == "你" ? parent.width - bubble-width + 14px : msg.role == "活动" ? 18px : 0px;
+                                        y: msg.role == "你" ? 8px : 0px;
+                                        width: msg.role == "你" ? bubble-width - 28px : msg.role == "活动" ? parent.width - 18px : parent.width;
                                         text: msg.body;
                                         color: msg.role == "你" ? (root.dark ? #e6e9f0 : #1c2430) : msg.role == "错误" || msg.tone == 2 ? (root.dark ? #ff8888 : #bf2020) : msg.role == "活动" || msg.role == "系统" ? (root.dark ? #9a9a9a : #676767) : (root.dark ? #f2f2f2 : #0d0d0d);
-                                        font-size: msg.role == "活动" || msg.role == "系统" ? 13px : 16px;
+                                        font-size: msg.role == "活动" || msg.role == "系统" ? 14px : 16px;
                                         horizontal-alignment: msg.role == "系统" ? center : left;
                                         wrap: word-wrap;
                                     }
@@ -454,36 +396,35 @@ export component AppWindow inherits Window {
                             }
                         }
                         Rectangle {
-                            height: 138px;
+                            height: 110px;
                             background: transparent;
                             Rectangle {
-                                width: min(parent.width - 48px, 720px); height: 118px;
-                                x: (parent.width - self.width) / 2; y: 4px;
-                                border-radius: 20px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3;
-                                background: root.dark ? #191919 : #ffffff; clip: true;
-                                Text { x: 16px; y: 12px; text: "描述要改的代码"; color: root.dark ? #777777 : #999999; font-size: 18px; visible: root.draft == ""; }
-                                TextInput { x: 16px; y: 9px; width: parent.width - 32px; height: 58px; text <=> root.draft; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; single-line: false; wrap: word-wrap; }
-                                if root.attachment-label == "": Rectangle { x: 10px; y: 73px; width: min(parent.width - 148px, 360px); height: 34px; border-radius: 17px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: root.dark ? #121212 : #f8f9fa;
+                                width: min(parent.width - 32px, 690px); height: 90px;
+                                x: (parent.width - self.width) / 2; y: 8px;
+                                border-radius: 20px; border-width: 1px; border-color: root.dark ? #2e2e2e : #e3e3e3;
+                                background: root.dark ? #1c1c1c : #ffffff; clip: true;
+                                Text { x: 16px; y: 9px; text: "描述要改的代码"; color: root.dark ? #9a9a9a : #999999; font-size: 18px; visible: root.draft == ""; }
+                                TextInput { x: 16px; y: 7px; width: parent.width - 32px; height: 32px; text <=> root.draft; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 18px; single-line: false; wrap: word-wrap; }
+                                if root.attachment-label == "": Rectangle { x: 10px; y: 47px; width: min(parent.width - 124px, 168px); height: 36px; border-radius: 18px; border-width: 1px; border-color: root.dark ? #262626 : #f0f0f2; background: root.dark ? #121212 : #f8f9fa;
                                     HorizontalLayout { alignment: start; padding-left: 12px; padding-right: 12px; spacing: 6px;
-                                        Text { text: root.model == "" ? "模型" : root.model; color: root.dark ? #9a9a9a : #676767; font-size: 13px; font-weight: 600; overflow: elide; wrap: no-wrap; max-width: 190px; vertical-alignment: center; }
-                                        Text { text: "·"; color: root.dark ? #666666 : #aaaaaa; font-size: 13px; vertical-alignment: center; }
-                                        Text { text: root.approval; color: root.dark ? #9a9a9a : #676767; font-size: 13px; font-weight: 600; overflow: elide; wrap: no-wrap; max-width: 110px; vertical-alignment: center; }
-                                        Text { text: "·"; color: root.dark ? #666666 : #aaaaaa; font-size: 13px; vertical-alignment: center; }
-                                        Text { text: root.effort; color: root.dark ? #9a9a9a : #676767; font-size: 13px; font-weight: 600; vertical-alignment: center; }
+                                        Text { text: root.model == "" ? "模型" : root.model; color: root.dark ? #9a9a9a : #676767; font-size: 14px; font-weight: 600; overflow: elide; wrap: no-wrap; max-width: 86px; vertical-alignment: center; }
+                                        Text { text: "·"; color: root.dark ? #676767 : #aaaaaa; font-size: 14px; vertical-alignment: center; }
+                                        Text { text: root.approval == "on-request" ? "请求批准" : root.approval == "never" ? "完全访问" : "受限"; color: root.dark ? #9a9a9a : #676767; font-size: 14px; font-weight: 600; vertical-alignment: center; }
                                     }
                                     settings-chip := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 4; root.open-info("settings"); } }
                                 }
-                                if root.attachment-label != "": Rectangle { x: 10px; y: 73px; width: min(parent.width - 148px, 360px); height: 34px; border-radius: 17px; border-width: 1px; border-color: root.dark ? #2b2b2b : #e3e3e3; background: root.dark ? #121212 : #f8f9fa;
-                                    Text { x: 12px; width: parent.width - 24px; text: root.attachment-label + " ×"; color: root.dark ? #d0d0d0 : #303030; font-size: 13px; font-weight: 600; vertical-alignment: center; overflow: elide; wrap: no-wrap; }
+                                if root.attachment-label != "": Rectangle { x: 10px; y: 47px; width: min(parent.width - 124px, 168px); height: 36px; border-radius: 18px; border-width: 1px; border-color: root.dark ? #262626 : #f0f0f2; background: root.dark ? #121212 : #f8f9fa;
+                                    Text { x: 12px; width: parent.width - 24px; text: root.attachment-label + " ×"; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 14px; font-weight: 600; vertical-alignment: center; overflow: elide; wrap: no-wrap; }
                                     attachment-chip := TouchArea { mouse-cursor: pointer; clicked => { root.clear-attachment(); } }
                                 }
-                                Rectangle { x: parent.width - 82px; y: 72px; width: 34px; height: 34px; border-radius: 12px; background: root.dark ? #191919 : #ffffff;
-                                    IconClip { x: 7.5px; y: 7.5px; tint: root.dark ? #9a9a9a : #676767; }
+                                Rectangle { x: root.busy || root.draft != "" || root.attachment-label != "" ? parent.width - 98px : parent.width - 50px; y: 43px; width: 40px; height: 40px; border-radius: 12px; background: clip-area.has-hover ? (root.dark ? #242424 : #f0f0f2) : transparent;
+                                    IconClip { x: 9px; y: 9px; width: 22px; height: 22px; tint: root.dark ? #9a9a9a : #676767; }
                                     clip-area := TouchArea { mouse-cursor: pointer; clicked => { root.attach-image(); } }
                                 }
-                                Rectangle { x: parent.width - 44px; y: 72px; width: 34px; height: 34px; border-radius: 10px; background: root.dark ? #f2f2f2 : #0d0d0d;
-                                    if root.busy: Rectangle { x: 10px; y: 10px; width: 14px; height: 14px; border-radius: 3px; background: root.dark ? #0d0d0d : #ffffff; }
-                                    if !root.busy: IconSend { x: 8px; y: 8px; tint: root.dark ? #0d0d0d : #ffffff; }
+                                Rectangle { x: parent.width - 50px; y: 45px; width: 36px; height: 36px; border-radius: 8px; background: root.dark ? #f2f2f2 : #0d0d0d;
+                                    visible: root.busy || root.draft != "" || root.attachment-label != "";
+                                    if root.busy: Rectangle { x: 11px; y: 11px; width: 14px; height: 14px; border-radius: 3px; background: root.dark ? #0d0d0d : #ffffff; }
+                                    if !root.busy: IconSend { x: 9px; y: 9px; tint: root.dark ? #0d0d0d : #ffffff; }
                                     send-area := TouchArea { mouse-cursor: pointer; clicked => { if root.busy { root.stop-turn(); } else { root.send-message(root.draft); } } }
                                 }
                             }

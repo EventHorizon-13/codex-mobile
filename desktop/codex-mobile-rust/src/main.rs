@@ -75,6 +75,40 @@ fn one_line(value: &str, limit: usize) -> String {
     if chars.next().is_some() { out.push('…'); }
     out
 }
+fn bubble_width(value: &str) -> i32 {
+    let width = value.lines().map(|line| line.chars().map(|ch| {
+        if ch.is_ascii_uppercase() || ch.is_ascii_digit() { 10usize }
+        else if ch.is_ascii_lowercase() { 8usize }
+        else if ch.is_ascii_whitespace() { 4usize }
+        else if ch.is_ascii() { 9usize }
+        else { 16usize }
+    }).sum::<usize>()).max().unwrap_or(0);
+    width.saturating_add(28).clamp(96, 456) as i32
+}
+fn civil_from_days(days: i64) -> (i64, u32, u32) {
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let mut year = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = mp + if mp < 10 { 3 } else { -9 };
+    if month <= 2 { year += 1; }
+    (year, month as u32, day as u32)
+}
+fn thread_time(ms: i64) -> String {
+    if ms <= 0 { return String::new(); }
+    let local = ms.div_euclid(1_000) + 8 * 3_600;
+    let days = local.div_euclid(86_400);
+    let seconds = local.rem_euclid(86_400);
+    let (_, month, day) = civil_from_days(days);
+    format!("{month:02}月{day:02}日 {:02}:{:02}", seconds / 3_600, seconds % 3_600 / 60)
+}
+fn project_label(cwd: &str) -> String {
+    std::path::Path::new(cwd).file_name().and_then(|name| name.to_str()).filter(|name| !name.is_empty()).unwrap_or("workspace").to_string()
+}
 fn rpc(tx: &mpsc::UnboundedSender<Command>, tag: &str, name: &str, payload: Value) {
     let _ = tx.send(Command::Rpc { tag: tag.into(), name: name.into(), payload });
 }
@@ -88,7 +122,8 @@ fn add_message(ui: &AppWindow, state: &mut State, role: &str, body: &str, tone: 
         state.reasoning_index = state.reasoning_index.map(|i| i.saturating_sub(1));
         state.tool_index = state.tool_index.map(|i| i.saturating_sub(1));
     }
-    rows.push(MessageRow { role: role.into(), body: body.chars().take(100_000).collect::<String>().into(), tone });
+    let body = body.chars().take(100_000).collect::<String>();
+    rows.push(MessageRow { role: role.into(), body: body.clone().into(), tone, width: bubble_width(&body) });
 }
 fn append_message_body(ui: &AppWindow, index: usize, text: &str) {
     let model = messages(ui);
@@ -161,7 +196,8 @@ fn handle_reply(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
                 if id.is_empty() { return None; }
                 let title = one_line(&text(thread, "title"), 80);
                 let preview = one_line(&text(thread, "preview"), 80);
-                Some(ThreadRow { id: id.into(), title: if title.is_empty() { if preview.is_empty() { "未命名会话".into() } else { preview.into() } } else { title.into() }, cwd: text(thread, "cwd").into(), status: text(thread, "status").into() })
+                let last_used = thread["lastUsedAt"].as_i64().unwrap_or_default();
+                Some(ThreadRow { id: id.into(), title: if title.is_empty() { if preview.is_empty() { "未命名会话".into() } else { preview.into() } } else { title.into() }, cwd: text(thread, "cwd").into(), status: text(thread, "status").into(), meta: thread_time(last_used).into() })
             }).collect();
             ui.set_threads(ModelRc::new(VecModel::from(s.threads.clone())));
             if !s.thread_id.is_empty() {
@@ -173,6 +209,7 @@ fn handle_reply(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
             s.instance_id = text(value, "instanceId");
             s.cwd = text(value, "cwd");
             ui.set_cwd(s.cwd.clone().into());
+            ui.set_project_name(project_label(&s.cwd).into());
             reset_messages(ui, &mut s);
             if tag == "session:new" { ui.set_title_text("新会话".into()); ui.set_selected_thread(-1); }
             else {
@@ -415,6 +452,7 @@ fn handle_agent(ui: &AppWindow, state: &Arc<Mutex<State>>, tx: &mpsc::UnboundedS
 fn main() -> Result<(), slint::PlatformError> {
     let config = load_config();
     let ui = AppWindow::new()?;
+    ui.set_display_font(if cfg!(target_os = "windows") { "SimSun" } else { "Noto Serif CJK SC" }.into());
     let dark = match config.theme_mode { 1 => true, 2 => false, _ => windows::system_dark() };
     ui.set_dark(dark);
     ui.set_theme_mode(config.theme_mode);
