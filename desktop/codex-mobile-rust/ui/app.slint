@@ -302,7 +302,7 @@ export component AppWindow inherits Window {
                             HorizontalLayout { padding-left: 12px; padding-right: 12px; spacing: 8px;
                                 IconFolder { width: 14px; height: 14px; tint: root.dark ? #f2f2f2 : #0d0d0d; cross-axis-self-alignment: center; }
                                 Text { text: root.project-name; color: root.dark ? #f2f2f2 : #0d0d0d; font-size: 12px; font-weight: 700; overflow: elide; wrap: no-wrap; vertical-alignment: center; }
-                                Text { text: root.panel == 0 ? (root.title-text == "" ? "新会话" : root.title-text) : root.panel == 1 ? "工作区" : root.panel == 2 ? "Git 变更" : root.panel == 3 ? "需要你" : root.panel == 4 ? "设置与状态" : "会话操作"; color: root.dark ? #9a9a9a : #676767; font-size: 12px; font-weight: 500; overflow: elide; wrap: no-wrap; vertical-alignment: center; horizontal-stretch: 1; }
+                                Text { text: root.panel == 0 ? root.title-text : root.panel == 1 ? "工作区" : root.panel == 2 ? "Git 变更" : root.panel == 3 ? "需要你" : root.panel == 4 ? "设置与状态" : "会话操作"; visible: root.panel != 0 || (root.title-text != "" && root.title-text != "新会话"); color: root.dark ? #9a9a9a : #676767; font-size: 12px; font-weight: 500; overflow: elide; wrap: no-wrap; vertical-alignment: center; horizontal-stretch: 1; }
                                 Text { text: "›"; color: root.dark ? #9a9a9a : #676767; font-size: 14px; vertical-alignment: center; }
                             }
                             context-area := TouchArea { mouse-cursor: pointer; clicked => { root.panel = 1; root.load-files(); } }
@@ -339,13 +339,14 @@ export component AppWindow inherits Window {
                             vertical-stretch: 1;
                             Rectangle {
                                 width: min(parent.width - 48px, 690px);
-                                height: root.threads.length > 0 && root.needs.length > 0 ? 192px : (root.threads.length > 0 || root.needs.length > 0 ? 140px : 80px);
+                                height: root.threads.length > 0 && root.needs.length > 0 ? 216px : (root.threads.length > 0 || root.needs.length > 0 ? 164px : 104px);
                                 x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
                                 background: transparent;
                                 VerticalLayout { spacing: 0px;
                                     Text { height: 36px; text: "这轮改什么？"; color: root.dark ? #f2f2f2 : #0d0d0d; font-family: root.display-font; font-size: 28px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+                                    Rectangle { height: 8px; background: transparent; }
                                     Text { height: 18px; text: "在 " + root.project-name; color: root.dark ? #9a9a9a : #676767; font-size: 15px; horizontal-alignment: center; vertical-alignment: center; }
-                                    Rectangle { height: 28px; background: transparent; }
+                                    Rectangle { height: 36px; background: transparent; }
                                     if root.threads.length > 0: SuggestionRow {
                                         title: "继续上次会话";
                                         detail: root.threads[0].title;
