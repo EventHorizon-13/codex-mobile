@@ -1,0 +1,18 @@
+[package]
+name = "codex-mobile-webview2"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Small Windows WebView2 shell for the Codex Mobile web UI"
+
+[target.'cfg(windows)'.dependencies]
+winit = "0.30"
+wry = "0.57"
+
+[profile.release]
+opt-level = "z"
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
+
