@@ -34,7 +34,7 @@ fn profile_dir() -> PathBuf {
 fn load_window_icon() -> Option<Icon> {
     let decoder = png::Decoder::new(Cursor::new(include_bytes!("../assets/codex-192.png")));
     let mut reader = decoder.read_info().ok()?;
-    let mut buffer = vec![0; reader.output_buffer_size()];
+    let mut buffer = vec![0; reader.output_buffer_size()?];
     let info = reader.next_frame(&mut buffer).ok()?;
     let pixels = &buffer[..info.buffer_size()];
     let rgba = match info.color_type {
