@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::{env, error::Error, fs, io::Cursor, path::{Path, PathBuf}};
+use base64::Engine;
 use serde::{Deserialize, Serialize};
 use winit::{
     application::ApplicationHandler,
@@ -9,7 +10,7 @@ use winit::{
     event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy},
     window::{Icon, Window, WindowId},
 };
-use wry::{http::Request, Rect, WebContext, WebViewBuilder};
+use wry::{http::Request, DragDropEvent, Rect, WebContext, WebViewBuilder};
 
 const DEFAULT_URL: &str = "https://codex-go.arcsiny.com/";
 const WINDOW_TITLE: &str = "Codex Chat Mobile";
@@ -20,6 +21,7 @@ const MIN_HEIGHT: f64 = 480.0;
 const ZOOM_MIN: f64 = 0.75;
 const ZOOM_MAX: f64 = 2.0;
 const ZOOM_STEP: f64 = 0.1;
+const MAX_DROP_BYTES: u64 = 24 * 1024 * 1024;
 
 const ZOOM_SHORTCUT_SCRIPT: &str = r#"
 (() => {
@@ -46,6 +48,55 @@ const ZOOM_SHORTCUT_SCRIPT: &str = r#"
     send(event.deltaY < 0 ? 'zoom-in' : 'zoom-out');
   }, { passive: false, capture: true });
 })();
+
+window.__codexDropNotice = message => {
+  let node = document.getElementById('__codex_drop_notice');
+  if (!node) {
+    node = document.createElement('div');
+    node.id = '__codex_drop_notice';
+    Object.assign(node.style, {
+      position: 'fixed', left: '50%', bottom: '92px', transform: 'translateX(-50%)',
+      zIndex: '2147483647', padding: '9px 14px', borderRadius: '12px',
+      background: 'rgba(30,30,30,.92)', color: '#fff', fontSize: '13px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      boxShadow: '0 8px 28px rgba(0,0,0,.28)', pointerEvents: 'none',
+      transition: 'opacity .18s ease', maxWidth: '80vw', whiteSpace: 'nowrap',
+      overflow: 'hidden', textOverflow: 'ellipsis'
+    });
+    document.body.appendChild(node);
+  }
+  node.textContent = message;
+  node.style.opacity = '1';
+  clearTimeout(window.__codexDropNoticeTimer);
+  window.__codexDropNoticeTimer = setTimeout(() => {
+    node.style.opacity = '0';
+    setTimeout(() => node.remove(), 220);
+  }, 2200);
+};
+
+window.__codexAttachDroppedFiles = files => {
+  const input = document.getElementById('file-input');
+  if (!input || !Array.isArray(files) || files.length === 0) {
+    window.__codexDropNotice?.('当前页面不能添加附件');
+    return false;
+  }
+  const transfer = new DataTransfer();
+  for (const item of files) {
+    try {
+      const binary = atob(item.data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      transfer.items.add(new File([bytes], item.name, { type: item.mimeType || 'application/octet-stream' }));
+    } catch (error) {
+      window.__codexDropNotice?.(`读取 ${item.name} 失败`);
+      return false;
+    }
+  }
+  input.files = transfer.files;
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+  window.__codexDropNotice?.(`已添加 ${files.length} 个文件`);
+  return true;
+};
 "#;
 
 #[derive(Debug, Clone)]
@@ -58,6 +109,16 @@ enum ZoomAction {
 #[derive(Debug, Clone)]
 enum UserEvent {
     Zoom(ZoomAction),
+    Files(Vec<DroppedFile>),
+    DropError(String),
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct DroppedFile {
+    name: String,
+    #[serde(rename = "mimeType")]
+    mime_type: String,
+    data: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -121,6 +182,50 @@ fn load_preferences(path: &Path) -> WindowPrefs {
         .unwrap_or_default();
     prefs.normalize();
     prefs
+}
+
+fn mime_type_for_path(path: &Path) -> &'static str {
+    match path.extension().and_then(|ext| ext.to_str()).unwrap_or_default().to_ascii_lowercase().as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "svg" => "image/svg+xml",
+        "pdf" => "application/pdf",
+        "txt" | "log" => "text/plain",
+        "md" => "text/markdown",
+        "json" => "application/json",
+        "csv" => "text/csv",
+        "html" | "htm" => "text/html",
+        "css" => "text/css",
+        "js" | "mjs" => "text/javascript",
+        "zip" => "application/zip",
+        _ => "application/octet-stream",
+    }
+}
+
+fn read_dropped_files(paths: Vec<PathBuf>) -> Result<Vec<DroppedFile>, String> {
+    let files: Vec<PathBuf> = paths.into_iter().filter(|path| path.is_file()).collect();
+    if files.is_empty() {
+        return Err("只支持拖入文件，不支持文件夹".to_string());
+    }
+
+    let mut total = 0_u64;
+    let mut result = Vec::with_capacity(files.len());
+    for path in files {
+        let size = fs::metadata(&path).map_err(|error| format!("读取 {} 失败：{error}", path.display()))?.len();
+        if size > MAX_DROP_BYTES || total.saturating_add(size) > MAX_DROP_BYTES {
+            return Err("单次拖入文件总大小不能超过 24MB".to_string());
+        }
+        total += size;
+        let bytes = fs::read(&path).map_err(|error| format!("读取 {} 失败：{error}", path.display()))?;
+        result.push(DroppedFile {
+            name: path.file_name().unwrap_or_default().to_string_lossy().into_owned(),
+            mime_type: mime_type_for_path(&path).to_string(),
+            data: base64::engine::general_purpose::STANDARD.encode(bytes),
+        });
+    }
+    Ok(result)
 }
 
 fn adjust_zoom(current: f64, action: ZoomAction) -> f64 {
@@ -231,6 +336,20 @@ impl ApplicationHandler for App {
             };
             let _ = proxy.send_event(UserEvent::Zoom(action));
         };
+        let drop_proxy = self.proxy.clone();
+        let drag_drop_handler = move |event: DragDropEvent| {
+            if let DragDropEvent::Drop { paths, .. } = event {
+                let proxy = drop_proxy.clone();
+                std::thread::spawn(move || {
+                    let event = match read_dropped_files(paths) {
+                        Ok(files) => UserEvent::Files(files),
+                        Err(message) => UserEvent::DropError(message),
+                    };
+                    let _ = proxy.send_event(event);
+                });
+            }
+            true
+        };
         let webview = WebViewBuilder::new_with_web_context(&mut web_context)
             .with_url(&self.url)
             .with_bounds(Rect {
@@ -239,6 +358,7 @@ impl ApplicationHandler for App {
             })
             .with_initialization_script(ZOOM_SHORTCUT_SCRIPT)
             .with_ipc_handler(ipc_handler)
+            .with_drag_drop_handler(drag_drop_handler)
             .build_as_child(&window)
             .expect("create the WebView2 controller; install the Edge WebView2 Runtime if missing");
 
@@ -284,6 +404,23 @@ impl ApplicationHandler for App {
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: UserEvent) {
         match event {
             UserEvent::Zoom(action) => self.apply_zoom(action),
+            UserEvent::Files(files) => {
+                if let Some(webview) = &self.webview {
+                    match serde_json::to_string(&files) {
+                        Ok(payload) => {
+                            let script = format!("window.__codexAttachDroppedFiles?.({payload});");
+                            let _ = webview.evaluate_script(&script);
+                        }
+                        Err(_) => {}
+                    }
+                }
+            }
+            UserEvent::DropError(message) => {
+                if let Some(webview) = &self.webview {
+                    let script = format!("window.__codexDropNotice?.({});", serde_json::to_string(&message).unwrap_or_else(|_| "\"文件读取失败\"".to_string()));
+                    let _ = webview.evaluate_script(&script);
+                }
+            }
         }
     }
 }
@@ -323,8 +460,10 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::{
-        adjust_zoom, resolve_url, window_title, ZoomAction, DEFAULT_URL, ZOOM_MAX, ZOOM_MIN,
+        adjust_zoom, mime_type_for_path, resolve_url, window_title, ZoomAction, DEFAULT_URL,
+        ZOOM_MAX, ZOOM_MIN,
     };
+    use std::path::Path;
 
     #[test]
     fn uses_the_hosted_web_ui_by_default() {
@@ -353,6 +492,14 @@ mod tests {
     fn non_default_zoom_is_visible_in_the_title() {
         assert_eq!(window_title(1.0), "Codex Chat Mobile");
         assert_eq!(window_title(1.2), "Codex Chat Mobile · 120%");
+    }
+
+    #[test]
+    fn dropped_images_keep_image_mime_types() {
+        assert_eq!(mime_type_for_path(Path::new("photo.PNG")), "image/png");
+        assert_eq!(mime_type_for_path(Path::new("scan.jpeg")), "image/jpeg");
+        assert_eq!(mime_type_for_path(Path::new("notes.md")), "text/markdown");
+        assert_eq!(mime_type_for_path(Path::new("binary.bin")), "application/octet-stream");
     }
 }
 
