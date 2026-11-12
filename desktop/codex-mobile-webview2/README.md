@@ -26,6 +26,19 @@ https://codex-go.arcsiny.com/
 
 窗口最小尺寸为 360x480，可以缩到常见手机宽度；Windows 标题栏和任务栏会显示 Codex 图标。
 
+窗口宽高、最大化状态和文字缩放会自动保存到：
+
+```text
+%LOCALAPPDATA%\CodexMobileWebView2\window.json
+```
+
+文字大小快捷键：
+
+- `Ctrl +`：放大 10%
+- `Ctrl -`：缩小 10%
+- `Ctrl 0`：恢复 100%
+- `Ctrl + 鼠标滚轮`：连续缩放
+
 ## 依赖
 
 - Windows 10 或 Windows 11。

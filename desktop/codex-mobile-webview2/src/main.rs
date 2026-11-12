@@ -1,14 +1,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{env, error::Error, fs, io::Cursor, path::PathBuf};
+use std::{env, error::Error, fs, io::Cursor, path::{Path, PathBuf}};
+use serde::{Deserialize, Serialize};
 use winit::{
     application::ApplicationHandler,
     dpi::{LogicalPosition, LogicalSize},
     event::WindowEvent,
-    event_loop::{ActiveEventLoop, EventLoop},
+    event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy},
     window::{Icon, Window, WindowId},
 };
-use wry::{Rect, WebContext, WebViewBuilder};
+use wry::{http::Request, Rect, WebContext, WebViewBuilder};
 
 const DEFAULT_URL: &str = "https://codex-go.arcsiny.com/";
 const WINDOW_TITLE: &str = "Codex Chat Mobile";
@@ -16,6 +17,80 @@ const INITIAL_WIDTH: f64 = 1180.0;
 const INITIAL_HEIGHT: f64 = 760.0;
 const MIN_WIDTH: f64 = 360.0;
 const MIN_HEIGHT: f64 = 480.0;
+const ZOOM_MIN: f64 = 0.75;
+const ZOOM_MAX: f64 = 2.0;
+const ZOOM_STEP: f64 = 0.1;
+
+const ZOOM_SHORTCUT_SCRIPT: &str = r#"
+(() => {
+  let lastWheelAt = 0;
+  const send = action => window.ipc?.postMessage(action);
+  window.addEventListener('keydown', event => {
+    if (!event.ctrlKey || event.altKey || event.metaKey) return;
+    const key = event.key;
+    let action = '';
+    if (key === '+' || key === '=') action = 'zoom-in';
+    else if (key === '-' || key === '_') action = 'zoom-out';
+    else if (key === '0') action = 'zoom-reset';
+    if (!action) return;
+    event.preventDefault();
+    event.stopPropagation();
+    send(action);
+  }, true);
+  window.addEventListener('wheel', event => {
+    if (!event.ctrlKey) return;
+    event.preventDefault();
+    const now = Date.now();
+    if (now - lastWheelAt < 90) return;
+    lastWheelAt = now;
+    send(event.deltaY < 0 ? 'zoom-in' : 'zoom-out');
+  }, { passive: false, capture: true });
+})();
+"#;
+
+#[derive(Debug, Clone)]
+enum ZoomAction {
+    In,
+    Out,
+    Reset,
+}
+
+#[derive(Debug, Clone)]
+enum UserEvent {
+    Zoom(ZoomAction),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+struct WindowPrefs {
+    width: u32,
+    height: u32,
+    maximized: bool,
+    zoom: f64,
+}
+
+impl Default for WindowPrefs {
+    fn default() -> Self {
+        Self {
+            width: INITIAL_WIDTH as u32,
+            height: INITIAL_HEIGHT as u32,
+            maximized: false,
+            zoom: 1.0,
+        }
+    }
+}
+
+impl WindowPrefs {
+    fn normalize(&mut self) {
+        if self.width < MIN_WIDTH as u32 || self.width > 10_000 {
+            self.width = INITIAL_WIDTH as u32;
+        }
+        if self.height < MIN_HEIGHT as u32 || self.height > 10_000 {
+            self.height = INITIAL_HEIGHT as u32;
+        }
+        self.zoom = self.zoom.clamp(ZOOM_MIN, ZOOM_MAX);
+    }
+}
 
 fn resolve_url(args: impl IntoIterator<Item = String>) -> String {
     args.into_iter()
@@ -29,6 +104,40 @@ fn profile_dir() -> PathBuf {
         .unwrap_or_else(env::temp_dir)
         .join("CodexMobileWebView2")
         .join("Profile")
+}
+
+fn state_path() -> PathBuf {
+    env::var_os("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(env::temp_dir)
+        .join("CodexMobileWebView2")
+        .join("window.json")
+}
+
+fn load_preferences(path: &Path) -> WindowPrefs {
+    let mut prefs = fs::read(path)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<WindowPrefs>(&bytes).ok())
+        .unwrap_or_default();
+    prefs.normalize();
+    prefs
+}
+
+fn adjust_zoom(current: f64, action: ZoomAction) -> f64 {
+    let next = match action {
+        ZoomAction::In => current + ZOOM_STEP,
+        ZoomAction::Out => current - ZOOM_STEP,
+        ZoomAction::Reset => 1.0,
+    };
+    (next * 10.0).round().clamp(ZOOM_MIN * 10.0, ZOOM_MAX * 10.0) / 10.0
+}
+
+fn window_title(zoom: f64) -> String {
+    if (zoom - 1.0).abs() < 0.001 {
+        WINDOW_TITLE.to_string()
+    } else {
+        format!("{WINDOW_TITLE} · {}%", (zoom * 100.0).round() as i32)
+    }
 }
 
 fn load_window_icon() -> Option<Icon> {
@@ -52,12 +161,47 @@ fn load_window_icon() -> Option<Icon> {
     Icon::from_rgba(rgba, info.width, info.height).ok()
 }
 
-#[derive(Default)]
 struct App {
     url: String,
     profile_dir: PathBuf,
+    state_path: PathBuf,
+    prefs: WindowPrefs,
+    normal_size: LogicalSize<u32>,
+    proxy: EventLoopProxy<UserEvent>,
     window: Option<Window>,
     webview: Option<wry::WebView>,
+}
+
+impl App {
+    fn save_preferences(&self) {
+        if let Some(parent) = self.state_path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        if let Ok(bytes) = serde_json::to_vec_pretty(&self.prefs) {
+            let _ = fs::write(&self.state_path, bytes);
+        }
+    }
+
+    fn capture_window_size(&mut self) {
+        let Some(window) = &self.window else { return; };
+        self.prefs.maximized = window.is_maximized();
+        if !self.prefs.maximized {
+            self.normal_size = window.inner_size().to_logical::<u32>(window.scale_factor());
+        }
+        self.prefs.width = self.normal_size.width.max(MIN_WIDTH as u32);
+        self.prefs.height = self.normal_size.height.max(MIN_HEIGHT as u32);
+    }
+
+    fn apply_zoom(&mut self, action: ZoomAction) {
+        self.prefs.zoom = adjust_zoom(self.prefs.zoom, action);
+        if let Some(webview) = &self.webview {
+            let _ = webview.zoom(self.prefs.zoom);
+        }
+        if let Some(window) = &self.window {
+            window.set_title(&window_title(self.prefs.zoom));
+        }
+        self.save_preferences();
+    }
 }
 
 impl ApplicationHandler for App {
@@ -66,9 +210,10 @@ impl ApplicationHandler for App {
             return;
         }
 
+        let initial_size = LogicalSize::new(self.prefs.width as f64, self.prefs.height as f64);
         let attributes = Window::default_attributes()
-            .with_title(WINDOW_TITLE)
-            .with_inner_size(LogicalSize::new(INITIAL_WIDTH, INITIAL_HEIGHT))
+            .with_title(window_title(self.prefs.zoom))
+            .with_inner_size(initial_size)
             .with_min_inner_size(LogicalSize::new(MIN_WIDTH, MIN_HEIGHT))
             .with_window_icon(load_window_icon());
         let window = event_loop
@@ -76,14 +221,31 @@ impl ApplicationHandler for App {
             .expect("create the Windows application window");
 
         let mut web_context = WebContext::new(Some(self.profile_dir.clone()));
+        let proxy = self.proxy.clone();
+        let ipc_handler = move |request: Request<String>| {
+            let action = match request.body().as_str() {
+                "zoom-in" => ZoomAction::In,
+                "zoom-out" => ZoomAction::Out,
+                "zoom-reset" => ZoomAction::Reset,
+                _ => return,
+            };
+            let _ = proxy.send_event(UserEvent::Zoom(action));
+        };
         let webview = WebViewBuilder::new_with_web_context(&mut web_context)
             .with_url(&self.url)
             .with_bounds(Rect {
                 position: LogicalPosition::new(0.0, 0.0).into(),
-                size: LogicalSize::new(INITIAL_WIDTH, INITIAL_HEIGHT).into(),
+                size: initial_size.into(),
             })
+            .with_initialization_script(ZOOM_SHORTCUT_SCRIPT)
+            .with_ipc_handler(ipc_handler)
             .build_as_child(&window)
             .expect("create the WebView2 controller; install the Edge WebView2 Runtime if missing");
+
+        let _ = webview.zoom(self.prefs.zoom);
+        if self.prefs.maximized {
+            window.set_maximized(true);
+        }
 
         self.window = Some(window);
         self.webview = Some(webview);
@@ -96,18 +258,32 @@ impl ApplicationHandler for App {
         event: WindowEvent,
     ) {
         match event {
-            WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::CloseRequested => {
+                self.capture_window_size();
+                self.save_preferences();
+                event_loop.exit();
+            }
             WindowEvent::Resized(size) => {
                 let (Some(window), Some(webview)) = (&self.window, &self.webview) else {
                     return;
                 };
                 let logical = size.to_logical::<u32>(window.scale_factor());
+                let maximized = window.is_maximized();
                 let _ = webview.set_bounds(Rect {
                     position: LogicalPosition::new(0, 0).into(),
                     size: LogicalSize::new(logical.width, logical.height).into(),
                 });
+                if !maximized {
+                    self.normal_size = logical;
+                }
             }
             _ => {}
+        }
+    }
+
+    fn user_event(&mut self, _event_loop: &ActiveEventLoop, event: UserEvent) {
+        match event {
+            UserEvent::Zoom(action) => self.apply_zoom(action),
         }
     }
 }
@@ -116,11 +292,20 @@ fn run() -> Result<(), Box<dyn Error>> {
     let profile_dir = profile_dir();
     fs::create_dir_all(&profile_dir)?;
 
-    let event_loop = EventLoop::new()?;
+    let event_loop = EventLoop::<UserEvent>::with_user_event().build()?;
+    let proxy = event_loop.create_proxy();
+    let state_path = state_path();
+    let prefs = load_preferences(&state_path);
+    let normal_size = LogicalSize::new(prefs.width, prefs.height);
     let mut app = App {
         url: resolve_url(env::args().skip(1)),
         profile_dir,
-        ..Default::default()
+        state_path,
+        prefs,
+        normal_size,
+        proxy,
+        window: None,
+        webview: None,
     };
     event_loop.run_app(&mut app)?;
     Ok(())
@@ -137,7 +322,9 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{resolve_url, DEFAULT_URL};
+    use super::{
+        adjust_zoom, resolve_url, window_title, ZoomAction, DEFAULT_URL, ZOOM_MAX, ZOOM_MIN,
+    };
 
     #[test]
     fn uses_the_hosted_web_ui_by_default() {
@@ -151,6 +338,21 @@ mod tests {
             resolve_url(["http://127.0.0.1:3232/".to_string()]),
             "http://127.0.0.1:3232/"
         );
+    }
+
+    #[test]
+    fn zoom_steps_are_clamped_and_resettable() {
+        assert_eq!(adjust_zoom(1.0, ZoomAction::In), 1.1);
+        assert_eq!(adjust_zoom(1.0, ZoomAction::Out), 0.9);
+        assert_eq!(adjust_zoom(ZOOM_MIN, ZoomAction::Out), ZOOM_MIN);
+        assert_eq!(adjust_zoom(ZOOM_MAX, ZoomAction::In), ZOOM_MAX);
+        assert_eq!(adjust_zoom(1.7, ZoomAction::Reset), 1.0);
+    }
+
+    #[test]
+    fn non_default_zoom_is_visible_in_the_title() {
+        assert_eq!(window_title(1.0), "Codex Chat Mobile");
+        assert_eq!(window_title(1.2), "Codex Chat Mobile · 120%");
     }
 }
 
