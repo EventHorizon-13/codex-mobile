@@ -26,6 +26,12 @@ const MAX_DROP_BYTES: u64 = 24 * 1024 * 1024;
 const ZOOM_SHORTCUT_SCRIPT: &str = r#"
 (() => {
   let lastWheelAt = 0;
+  const nativeSetTimeout = window.setTimeout.bind(window);
+  window.__codexImmediateLongPress = false;
+  window.setTimeout = (callback, delay = 0, ...args) => {
+    const effectiveDelay = window.__codexImmediateLongPress && delay >= 400 && delay <= 600 ? 0 : delay;
+    return nativeSetTimeout(callback, effectiveDelay, ...args);
+  };
   const send = action => window.ipc?.postMessage(action);
   window.addEventListener('keydown', event => {
     if (!event.ctrlKey || event.altKey || event.metaKey) return;
@@ -56,11 +62,16 @@ const ZOOM_SHORTCUT_SCRIPT: &str = r#"
       bubbles: true, cancelable: true, clientX: event.clientX, clientY: event.clientY,
       pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, buttons: 1,
     };
-    row.dispatchEvent(new PointerEvent('pointerdown', options));
-    setTimeout(() => {
+    window.__codexImmediateLongPress = true;
+    try {
+      row.dispatchEvent(new PointerEvent('pointerdown', options));
+    } finally {
+      window.__codexImmediateLongPress = false;
+    }
+    nativeSetTimeout(() => {
       if (!row.isConnected) return;
       row.dispatchEvent(new PointerEvent('pointerup', { ...options, buttons: 0 }));
-    }, 520);
+    }, 30);
   }, true);
 })();
 
