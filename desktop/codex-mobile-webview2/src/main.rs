@@ -309,7 +309,7 @@ impl App {
     }
 }
 
-impl ApplicationHandler for App {
+impl ApplicationHandler<UserEvent> for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if self.window.is_some() {
             return;
