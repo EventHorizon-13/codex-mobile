@@ -47,6 +47,21 @@ const ZOOM_SHORTCUT_SCRIPT: &str = r#"
     lastWheelAt = now;
     send(event.deltaY < 0 ? 'zoom-in' : 'zoom-out');
   }, { passive: false, capture: true });
+  window.addEventListener('contextmenu', event => {
+    const row = event.target?.closest?.('.session-item');
+    if (!row) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const options = {
+      bubbles: true, cancelable: true, clientX: event.clientX, clientY: event.clientY,
+      pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, buttons: 1,
+    };
+    row.dispatchEvent(new PointerEvent('pointerdown', options));
+    setTimeout(() => {
+      if (!row.isConnected) return;
+      row.dispatchEvent(new PointerEvent('pointerup', { ...options, buttons: 0 }));
+    }, 520);
+  }, true);
 })();
 
 window.__codexDropNotice = message => {
