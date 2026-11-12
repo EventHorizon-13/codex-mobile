@@ -1,19 +1,21 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{env, error::Error, fs, path::PathBuf};
+use std::{env, error::Error, fs, io::Cursor, path::PathBuf};
 use winit::{
     application::ApplicationHandler,
     dpi::{LogicalPosition, LogicalSize},
     event::WindowEvent,
     event_loop::{ActiveEventLoop, EventLoop},
-    window::{Window, WindowId},
+    window::{Icon, Window, WindowId},
 };
 use wry::{Rect, WebContext, WebViewBuilder};
 
 const DEFAULT_URL: &str = "https://codex-go.arcsiny.com/";
-const WINDOW_TITLE: &str = "Codex";
+const WINDOW_TITLE: &str = "Codex Chat Mobile";
 const INITIAL_WIDTH: f64 = 1180.0;
 const INITIAL_HEIGHT: f64 = 760.0;
+const MIN_WIDTH: f64 = 360.0;
+const MIN_HEIGHT: f64 = 480.0;
 
 fn resolve_url(args: impl IntoIterator<Item = String>) -> String {
     args.into_iter()
@@ -27,6 +29,27 @@ fn profile_dir() -> PathBuf {
         .unwrap_or_else(env::temp_dir)
         .join("CodexMobileWebView2")
         .join("Profile")
+}
+
+fn load_window_icon() -> Option<Icon> {
+    let decoder = png::Decoder::new(Cursor::new(include_bytes!("../assets/codex-192.png")));
+    let mut reader = decoder.read_info().ok()?;
+    let mut buffer = vec![0; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut buffer).ok()?;
+    let pixels = &buffer[..info.buffer_size()];
+    let rgba = match info.color_type {
+        png::ColorType::Rgba => pixels.to_vec(),
+        png::ColorType::Rgb => {
+            let mut rgba = Vec::with_capacity(info.width as usize * info.height as usize * 4);
+            for pixel in pixels.chunks_exact(3) {
+                rgba.extend_from_slice(pixel);
+                rgba.push(255);
+            }
+            rgba
+        }
+        _ => return None,
+    };
+    Icon::from_rgba(rgba, info.width, info.height).ok()
 }
 
 #[derive(Default)]
@@ -46,7 +69,8 @@ impl ApplicationHandler for App {
         let attributes = Window::default_attributes()
             .with_title(WINDOW_TITLE)
             .with_inner_size(LogicalSize::new(INITIAL_WIDTH, INITIAL_HEIGHT))
-            .with_min_inner_size(LogicalSize::new(720.0, 560.0));
+            .with_min_inner_size(LogicalSize::new(MIN_WIDTH, MIN_HEIGHT))
+            .with_window_icon(load_window_icon());
         let window = event_loop
             .create_window(attributes)
             .expect("create the Windows application window");

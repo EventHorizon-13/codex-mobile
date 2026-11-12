@@ -24,6 +24,8 @@ https://codex-go.arcsiny.com/
 
 删除该目录即可清除这个外壳的登录状态。
 
+窗口最小尺寸为 360x480，可以缩到常见手机宽度；Windows 标题栏和任务栏会显示 Codex 图标。
+
 ## 依赖
 
 - Windows 10 或 Windows 11。
