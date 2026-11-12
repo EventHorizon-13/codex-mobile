@@ -1,0 +1,63 @@
+name: Windows WebView2 client
+
+on:
+  push:
+    branches:
+      - feature/windows-webview2
+      - dev
+    paths:
+      - 'desktop/codex-mobile-webview2/**'
+      - '.github/workflows/windows-webview2.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/codex-mobile-webview2
+          cache-on-failure: true
+      - name: Test URL selection
+        shell: pwsh
+        run: cargo test --release --manifest-path desktop/codex-mobile-webview2/Cargo.toml
+      - name: Build WebView2 shell
+        shell: pwsh
+        run: cargo build --release --manifest-path desktop/codex-mobile-webview2/Cargo.toml
+      - name: Smoke test WebView2 startup
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path 'desktop/codex-mobile-webview2/target/release/codex-mobile-webview2.exe'
+          $app = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 12
+          if ($app.HasExited) {
+            throw "WebView2 shell exited during startup with code $($app.ExitCode)"
+          }
+          $children = Get-Process msedgewebview2 -ErrorAction SilentlyContinue
+          if (-not $children) {
+            throw "No msedgewebview2 child process was created"
+          }
+          $children |
+            Sort-Object WorkingSet64 -Descending |
+            Select-Object Id, WorkingSet64, PrivateMemorySize64 |
+            Format-Table -AutoSize
+          Stop-Process -Id $app.Id -Force
+      - name: Package app
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Copy-Item desktop/codex-mobile-webview2/target/release/codex-mobile-webview2.exe out/CodexWebView2.exe
+          Copy-Item desktop/codex-mobile-webview2/README.md out/README.md
+          Get-Item out/CodexWebView2.exe, out/README.md | Select-Object Name, Length
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodexWebView2-Windows-x64
+          path: |
+            out/CodexWebView2.exe
+            out/README.md
+          retention-days: 30
